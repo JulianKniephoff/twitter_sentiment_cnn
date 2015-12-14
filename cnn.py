@@ -20,17 +20,20 @@ class WordEmbeddings:
 
 
 class CNN:
-    def __init__(self, vocab, initial_word_embeddings='uniform', embedding_dimension=None):
-        self.vocab = vocab
-        self.network = self.build_network(initial_word_embeddings=initial_word_embeddings, embedding_dimension=embedding_dimension)
+    def __init__(self, vocab, initial_embeddings=None, embedding_dimension=None):
+        if initial_embeddings is not None:
+            embedding_dimension = initial_embeddings.shape[1]
 
-        self.index = self.create_word_to_vocab_index_mapping()
+        # TODO Variable naming ...
+        self.index = self.create_word_to_vocab_index_mapping(vocab)
 
-    def create_word_to_vocab_index_mapping(self):
-        return {word: i for (i, word) in enumerate(self.vocab)}
+        self.network = self.build_network(initial_embeddings, embedding_dimension)
 
-    def build_network(self, initial_word_embeddings, embedding_dimension):
-        embedding = Embedding(input_dim=len(self.vocab), output_dim=embedding_dimension, init=initial_word_embeddings)
+    def create_word_to_vocab_index_mapping(self, vocab):
+        return {word: i for (i, word) in enumerate(vocab)}
+
+    def build_network(self, initial_embeddings, embedding_dimension):
+        embedding = Embedding(input_dim=len(self.index), output_dim=embedding_dimension, weights=[initial_embeddings] if initial_embeddings is not None else None)
 
         model = Sequential([embedding])
         # TODO Don't use strings here
