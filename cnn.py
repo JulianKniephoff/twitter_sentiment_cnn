@@ -13,29 +13,34 @@ from keras.layers.embeddings import Embedding
 from gensim.models import Word2Vec
 
 
-class CNN:
-    def __init__(self, model=None, vocab=None):
+class WordEmbeddings:
+    def __init__(self, model):
         self.model = model
-        self.vocab = vocab or self.extract_vocab_from_model()
+        self.vocab = list(model.vocab)
+
+    def matrix(self):
+        return np.array([self.model[word] for word in self.vocab])
+
+
+class CNN:
+    def __init__(self, vocab, initial_word_embeddings='uniform', embedding_dimension=None):
+        self.vocab = vocab
+        self.network = self.build_network(initial_word_embeddings=initial_word_embeddings, embedding_dimension=embedding_dimension)
+
         self.index = self.create_word_to_vocab_index_mapping()
-        if model:
-            self.initial_weights = self.extract_initial_weights_from_model()
-
-    def extract_vocab_from_model(self):
-        assert self.model
-        return list(self.model.vocab)
-
-    def tweet_to_indices(self, tweet):
-        return [self.index[word] for word in tweet if word in self.vocab]
 
     def create_word_to_vocab_index_mapping(self):
         return {word: i for (i, word) in enumerate(self.vocab)}
 
-    def extract_initial_weights_from_model(self):
-        try:
-            self.initial_weights = np.array([self.model[word] for word in self.vocab])
-        except KeyError:
-            raise AssertionError("The given vocabulary and that of the model disagree")
+    def build_network(self, initial_word_embeddings, embedding_dimension):
+        embedding = Embedding(input_dim=len(self.vocab), output_dim=embedding_dimension, init=initial_word_embeddings)
+
+        model = Sequential([embedding])
+        model.compile(optimizer='sgd', loss='categorical_crossentropy')
+        return model
+
+    def tweet_to_indices(self, tweet):
+        return [self.index[word] for word in tweet if word in self.vocab]
 
 
 def parse_tweets(path):
@@ -56,8 +61,9 @@ def main():
     positive_tweets = parse_tweets(positive_tweets_path)
     negative_tweets = parse_tweets(negative_tweets_path)
 
-    cnn = CNN(Word2Vec.load(embeddings_path))
-    print(cnn.initial_weights)
+    embeddings = WordEmbeddings(Word2Vec.load(embeddings_path))
+    cnn = CNN(embeddings.vocab, initial_word_embeddings=embeddings.matrix())
+    cnn.network.predict([cnn.tweet_to_indices(positive_tweets[0])t ])
 
     # Extract initial weights for the embedding layer
     # word2vec_embeddings = Word2Vec.load(embeddings_path)
