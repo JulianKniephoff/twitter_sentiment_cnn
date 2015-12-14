@@ -8,16 +8,22 @@ from gensim.models import Word2Vec
 
 
 class CNN:
-    def __init__(self, initial_model=None, vocab=None):
-        self.initial_model = initial_model
+    def __init__(self, model=None, vocab=None):
+        self.model = model
         self.vocab = vocab
 
         if not vocab:
-            assert initial_model
+            assert self.model
 
-            self.vocab = list(self.initial_model.vocab)
+            self.vocab = list(self.model.vocab)
 
         self.index = {word: i for (i, word) in enumerate(self.vocab)}
+
+        if self.model:
+            try:
+                self.initial_weights = np.array([self.model[word] for word in vocab])
+            except KeyError:
+                raise AssertionError("The given vocabulary and that of the model disagree")
 
     def tweet_to_indices(self, tweet):
         return [self.index[word] for word in tweet if word in self.vocab]
@@ -42,9 +48,7 @@ def main():
     negative_tweets = parse_tweets(negative_tweets_path)
 
     cnn = CNN(Word2Vec.load(embeddings_path))
-    print(cnn.tweet_to_indices(positive_tweets[0]))
-    print(cnn.tweet_to_indices(['laksdfjalskdfjalsdfkjasdlkfjasldfkjasdlfkj',
-                                'laksdfjlasdjflkasdjfasldkfjadslkfjaslkdfjasdlkfjaslkdfjadslkjfasldkfj']))
+    print(cnn.initial_weights)
 
     # Extract initial weights for the embedding layer
     # word2vec_embeddings = Word2Vec.load(embeddings_path)
