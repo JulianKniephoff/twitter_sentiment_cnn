@@ -21,7 +21,7 @@ class CNN:
 
         if self.model:
             try:
-                self.initial_weights = np.array([self.model[word] for word in vocab])
+                self.initial_weights = np.array([self.model[word] for word in self.vocab])
             except KeyError:
                 raise AssertionError("The given vocabulary and that of the model disagree")
 
