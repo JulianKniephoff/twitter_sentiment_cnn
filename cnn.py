@@ -1,7 +1,3 @@
-# TODO docopt?
-
-# TODO Create and test the embedding layer
-
 import sys
 import csv
 
@@ -19,6 +15,7 @@ class WordEmbeddings:
         self.vocab = list(model.vocab)
 
     def matrix(self):
+        # TODO Memoize this?
         return np.array([self.model[word] for word in self.vocab])
 
 
@@ -36,11 +33,12 @@ class CNN:
         embedding = Embedding(input_dim=len(self.vocab), output_dim=embedding_dimension, init=initial_word_embeddings)
 
         model = Sequential([embedding])
+        # TODO Don't use strings here
         model.compile(optimizer='sgd', loss='categorical_crossentropy')
         return model
 
     def tweet_to_indices(self, tweet):
-        return [self.index[word] for word in tweet if word in self.vocab]
+        return [self.index[word] for word in tweet if word in self.index]
 
 
 def parse_tweets(path):
@@ -61,22 +59,10 @@ def main():
     positive_tweets = parse_tweets(positive_tweets_path)
     negative_tweets = parse_tweets(negative_tweets_path)
 
+    # TODO Make it so that this does not need to be kept in memory
     embeddings = WordEmbeddings(Word2Vec.load(embeddings_path))
-    cnn = CNN(embeddings.vocab, initial_word_embeddings=embeddings.matrix())
-    cnn.network.predict([cnn.tweet_to_indices(positive_tweets[0])t ])
-
-    # Extract initial weights for the embedding layer
-    # word2vec_embeddings = Word2Vec.load(embeddings_path)
-    # weights = list()
-    # for word in vocabulary:
-    #    try:
-    #        weights.append(word2vec_embeddings[word])
-    #    except KeyError:
-    #        pass
-
-    ## TODO There might be stuff in here that we do not have embeddings for
-    # weights = np.array(map(lambda word: word2vec_embeddings[word], vocabulary))
-    # print(weights)
+    cnn = CNN(embeddings.vocab, initial_embeddings=embeddings.matrix())
+    print(cnn.network.predict(np.array([cnn.tweet_to_indices(positive_tweets[0])])).shape)
 
 
 if __name__ == '__main__':
