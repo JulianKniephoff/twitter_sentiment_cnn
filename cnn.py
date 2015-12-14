@@ -1,32 +1,41 @@
-# TODO docopt
+# TODO docopt?
+
+# TODO Create and test the embedding layer
 
 import sys
 import csv
 
 import numpy as np
+
+from keras.models import Sequential
+from keras.layers.embeddings import Embedding
+
 from gensim.models import Word2Vec
 
 
 class CNN:
     def __init__(self, model=None, vocab=None):
         self.model = model
-        self.vocab = vocab
+        self.vocab = vocab or self.extract_vocab_from_model()
+        self.index = self.create_word_to_vocab_index_mapping()
+        if model:
+            self.initial_weights = self.extract_initial_weights_from_model()
 
-        if not vocab:
-            assert self.model
-
-            self.vocab = list(self.model.vocab)
-
-        self.index = {word: i for (i, word) in enumerate(self.vocab)}
-
-        if self.model:
-            try:
-                self.initial_weights = np.array([self.model[word] for word in self.vocab])
-            except KeyError:
-                raise AssertionError("The given vocabulary and that of the model disagree")
+    def extract_vocab_from_model(self):
+        assert self.model
+        return list(self.model.vocab)
 
     def tweet_to_indices(self, tweet):
         return [self.index[word] for word in tweet if word in self.vocab]
+
+    def create_word_to_vocab_index_mapping(self):
+        return {word: i for (i, word) in enumerate(self.vocab)}
+
+    def extract_initial_weights_from_model(self):
+        try:
+            self.initial_weights = np.array([self.model[word] for word in self.vocab])
+        except KeyError:
+            raise AssertionError("The given vocabulary and that of the model disagree")
 
 
 def parse_tweets(path):
