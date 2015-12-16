@@ -15,6 +15,8 @@ class WordEmbeddings:
         self.vocab = list(model.vocab)
 
     def matrix(self):
+        # TODO Does this really have to be a numpy matrix?
+        # Shouldn't a list of numpy vectors suffice?
         # TODO Memoize this?
         return np.array([self.model[word] for word in self.vocab])
 
