@@ -25,13 +25,12 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
         from theano.tensor import max
         return max(x, 1)
 
-    # TODO Put name first always
     network = Graph()
     network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
-    network.add_node(layer=Embedding(input_dim=len(vocabulary),
+    network.add_node(name='embedding',
+                     layer=Embedding(input_dim=len(vocabulary),
                                      output_dim=embedding_dimension,
                                      weights=[initial_embeddings] if initial_embeddings is not None else None ),
-                     name='embedding',
                      input='input')
 
     # TODO Ensure that there is at least one element in filter_sizes_and_counts
@@ -39,13 +38,13 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
     for size, count in filter_sizes_and_counts:
         # TODO Use sequential containers here?
         # The question is then: Do we need to access them later on and how do we do that?
-        network.add_node(layer=Convolution1D(count, size),
-                         name='convolution-%d' % size,
+        network.add_node(name='convolution-%d' % size,
+                         layer=Convolution1D(count, size),
                          input='embedding')
-        network.add_node(layer=Lambda(one_max_pooling,
+        network.add_node(name='max-pooling-%d' % size,
+                         layer=Lambda(one_max_pooling,
                                       # TODO We should not have to specify the output shape
                                       output_shape=(count,)),
-                         name='max-pooling-%d' % size,
                          input='convolution-%d' % size)
         filters.append('max-pooling-%d' % size)
 
@@ -54,8 +53,8 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
         inputs = {'input': filters[0]}
     else:
         inputs = {'inputs': filters}
-    network.add_node(layer=Dense(2, activation=softmax),
-                     name='softmax',
+    network.add_node(name='softmax',
+                     layer=Dense(2, activation=softmax),
                      **inputs)
 
     network.add_output(name='output',
