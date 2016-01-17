@@ -76,6 +76,7 @@ class CNN:
             model_file.write(self.network.to_json())
         self.network.save_weights(path.join(basedir, 'weights.h5'))
 
+
 def parse_tweets(path):
     with open(path) as tweets_file:
         return [row[1:] for row in csv.reader(tweets_file)]
