@@ -8,6 +8,8 @@ from keras.models import Graph
 from keras.layers.core import Dense, Lambda
 from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
+from keras.optimizers import SGD
+from keras.objectives import categorical_crossentropy
 
 from gensim.models import Word2Vec
 
@@ -57,9 +59,8 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
     network.add_output(name='output',
                        input='softmax')
 
-    # TODO Don't use strings here
     # TODO Are these actually the parameters we want?
-    network.compile(optimizer='sgd', loss={'output': 'categorical_crossentropy'})
+    network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
     return network
 
 
