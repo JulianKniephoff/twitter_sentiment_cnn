@@ -37,6 +37,7 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
     filters = []
     for size, count in filter_sizes_and_counts:
         # TODO Use sequential containers here?
+        # The question is then: Do we need to access them later on and how do we do that?
         network.add_node(layer=Convolution1D(count, size),
                          name='convolution-%d' % size,
                          input='embedding')
