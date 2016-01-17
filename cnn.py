@@ -5,7 +5,7 @@ import csv
 import numpy as np
 
 from keras.models import Graph
-from keras.layers.core import Dense, Lambda, Reshape
+from keras.layers.core import Dense, Lambda
 from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
 
