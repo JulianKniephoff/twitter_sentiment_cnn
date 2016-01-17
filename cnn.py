@@ -17,7 +17,7 @@ def create_index(vocabulary):
 
 
 def one_max_pooling(X):
-    import theano.tensor as T  # TODO Is it really necessary to reimport this here?
+    import theano.tensor as T  # TODO Is it really necessary to import this here?
     return T.max(X, 1)
 
 
@@ -46,9 +46,13 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
         filters.append('max-pooling-%d' % size)
 
     # TODO Use sequential containers here, too
+    if len(filters) == 1:
+        inputs = {'input': filters[0]}
+    else:
+        inputs = {'inputs': filters}
     network.add_node(layer=Dense(2, activation='softmax'),  # TODO Don't use strings here, either
                      name='softmax',
-                     inputs=filters)  # TODO What if we only have one input? This does not work then.
+                     **inputs)
 
     network.add_output(name='output',
                        input='softmax')
