@@ -1,5 +1,5 @@
 import sys
-from os import path
+import os.path
 import csv
 
 import numpy as np
@@ -78,9 +78,9 @@ class CNN:
         return [self.index[word] for word in tweet if word in self.index]
 
     def save(self, basedir):
-        with open(path.join(basedir, 'model.json'), 'w') as model_file:
+        with open(os.path.join(basedir, 'model.json'), 'w') as model_file:
             model_file.write(self.network.to_json())
-        self.network.save_weights(path.join(basedir, 'weights.h5'))
+        self.network.save_weights(os.path.join(basedir, 'weights.h5'))
 
 
 def parse_tweets(path):
