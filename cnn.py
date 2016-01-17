@@ -3,6 +3,7 @@ from os import path
 import csv
 
 import numpy as np
+from theano.tensor.nnet import softmax
 
 from keras.models import Graph
 from keras.layers.core import Dense, Lambda
@@ -18,12 +19,12 @@ def create_index(vocabulary):
     return {word: i for (i, word) in enumerate(vocabulary)}
 
 
-def one_max_pooling(X):
-    import theano.tensor as T  # TODO Is it really necessary to import this here?
-    return T.max(X, 1)
-
-
 def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_sizes_and_counts):
+
+    def one_max_pooling(x):
+        from theano.tensor import max
+        return max(x, 1)
+
     # TODO Put name first always
     network = Graph()
     network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
@@ -53,7 +54,7 @@ def build_network(vocabulary, initial_embeddings, embedding_dimension, filter_si
         inputs = {'input': filters[0]}
     else:
         inputs = {'inputs': filters}
-    network.add_node(layer=Dense(2, activation='softmax'),  # TODO Don't use strings here, either
+    network.add_node(layer=Dense(2, activation=softmax),
                      name='softmax',
                      **inputs)
 
