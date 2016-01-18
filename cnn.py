@@ -30,6 +30,9 @@ class CNN:
     # TODO Make the argument list better
     def build_network(self, initial_embeddings, embedding_dimension, filter_sizes_and_counts):
 
+        # TODO Is this idiomatic?
+        assert len(filter_sizes_and_counts) > 0
+
         def one_max_pooling(x):
             from theano.tensor import max
             return max(x, 1)
