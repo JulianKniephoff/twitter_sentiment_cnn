@@ -73,7 +73,7 @@ class CNN:
         self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
 
     def save(self, basedir):
-        with open(os.path.join(basedir, 'model.json'), 'w') as model_file:
+        with open(os.path.join(basedir, 'model.yml'), 'w') as model_file:
             model_file.write(self.network.to_json())
         self.network.save_weights(os.path.join(basedir, 'weights.h5'))
 
