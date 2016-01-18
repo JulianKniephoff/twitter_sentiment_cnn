@@ -5,7 +5,7 @@ import csv
 import numpy as np
 from theano.tensor.nnet import softmax
 
-from keras.models import Graph
+from keras.models import Graph, model_from_yaml
 from keras.layers.core import Dense, Lambda
 from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
@@ -76,6 +76,15 @@ class CNN:
         with open(os.path.join(basedir, 'model.yml'), 'w') as model_file:
             model_file.write(self.network.to_json())
         self.network.save_weights(os.path.join(basedir, 'weights.h5'))
+
+    def load(self, basedir):
+        # TODO What if the index does not match the vocabulary in the model files?
+        # TODO Continue here
+        with open(os.path.join(basedir, 'model.yml'), 'r') as model_file:
+            self.network = model_from_yaml(model_file.read())
+            # TODO Do we have to compile the model again, here?
+            self.network.load_weights(os.path.join(basedir, 'weights.h5'))
+
 
 
 def parse_tweets(path):
