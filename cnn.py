@@ -3,6 +3,7 @@ import os.path
 import csv
 
 import numpy as np
+
 from theano.tensor.nnet import softmax
 
 from keras.models import Graph, model_from_yaml
