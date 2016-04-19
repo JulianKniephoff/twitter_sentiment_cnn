@@ -24,6 +24,24 @@ def one_max_pooling(x):
     return max(x, 1)
 
 
+# Wrap a `Lambda` layer with a specific function
+# NOTE This is necessary to deserialize this layer
+class OneMaxPooling(Lambda):
+    def __init__(self, count, **kwargs):
+        # Count represents the output shape
+        # TODO `count` is not really a good name
+        # NOTE This has to live in a different attribute, though, since `output_shape` is not properly deserialized
+        self.count = count
+        # TODO Why do we have to specify the `output_shape` at all?
+        super(OneMaxPooling, self).__init__(function=one_max_pooling, output_shape=(self.count,), **kwargs)
+
+    def get_config(self):
+        config = super(OneMaxPooling, self).get_config()
+        # Add `count` to the config so that it gets serialized alongside the rest of the configuration
+        config['count'] = self.count
+        return config
+
+
 class CNN:
     def __init__(self, vocabulary):
         self.index = create_index(vocabulary)
@@ -54,10 +72,9 @@ class CNN:
             self.network.add_node(name='convolution-%d' % size,
                                   layer=Convolution1D(count, size),
                                   input='embedding')
+            pooling = OneMaxPooling(count=count)
             self.network.add_node(name='max-pooling-%d' % size,
-                                  layer=Lambda(one_max_pooling,
-                                               # TODO We should not have to specify the output shape
-                                               output_shape=(count,)),
+                                  layer=pooling,
                                   input='convolution-%d' % size)
             filters.append('max-pooling-%d' % size)
 
