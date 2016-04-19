@@ -1,6 +1,5 @@
-import sys
 import os.path
-import csv
+import json
 
 import numpy as np
 
@@ -78,14 +77,19 @@ class CNN:
         self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
 
     def save(self, basedir):
+        # TODO Create `basedir` if it does not exist
         with open(os.path.join(basedir, 'model.yml'), 'w') as model_file:
-            model_file.write(self.network.to_json())
+            model_file.write(self.network.to_yaml())
+        # NOTE Maybe use `overwrite=True`
         self.network.save_weights(os.path.join(basedir, 'weights.h5'))
+        with open(os.path.join(basedir, 'index.json'), 'w') as index_file:
+            json.dump(self.index, index_file)
 
     def load(self, basedir):
         # TODO What if the index does not match the vocabulary in the model files?
         with open(os.path.join(basedir, 'model.yml'), 'r') as model_file:
-            self.network = model_from_yaml(model_file.read())
-            # TODO Do we have to compile the model again, here?
-            self.network.load_weights(os.path.join(basedir, 'weights.h5'))
+            self.network = model_from_yaml(model_file.read(), custom_objects={'OneMaxPooling': OneMaxPooling})
+        self.network.load_weights(os.path.join(basedir, 'weights.h5'))
+        with open(os.path.join(basedir, 'index.json'), 'r') as index_file:
+            self.index = json.load(index_file)
 
