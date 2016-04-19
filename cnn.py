@@ -85,7 +85,6 @@ class CNN:
 
     def load(self, basedir):
         # TODO What if the index does not match the vocabulary in the model files?
-        # TODO Continue here
         with open(os.path.join(basedir, 'model.yml'), 'r') as model_file:
             self.network = model_from_yaml(model_file.read())
             # TODO Do we have to compile the model again, here?
