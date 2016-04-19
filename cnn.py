@@ -12,8 +12,6 @@ from keras.layers.convolutional import Convolution1D
 from keras.optimizers import SGD
 from keras.objectives import categorical_crossentropy
 
-from gensim.models import Word2Vec
-
 
 def create_index(vocabulary):
     return {word: i for (i, word) in enumerate(vocabulary)}
