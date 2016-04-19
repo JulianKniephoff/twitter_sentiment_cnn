@@ -94,24 +94,4 @@ def parse_tweets(path):
         return [row[1:] for row in csv.reader(tweets_file)]
 
 
-def main():
-    try:
-        positive_tweets_path = sys.argv[1]
-        negative_tweets_path = sys.argv[2]
-        embeddings_path = sys.argv[3]
-    except IndexError:
-        print('Usage: cnn.py <positive_tweets_file> <negative_tweets_file> <word2vec_model>')
-        sys.exit(1)
 
-    # Load tweets and vocabulary
-    positive_tweets = parse_tweets(positive_tweets_path)
-    negative_tweets = parse_tweets(negative_tweets_path)
-
-    # TODO Make it so that this does not need to be kept in memory
-    # embeddings = WordEmbeddings(Word2Vec.load(embeddings_path))
-    # cnn = CNN(embeddings.vocab, initial_embeddings=embeddings.matrix())
-    # print(cnn.network.predict(np.array([cnn.tweet_to_indices(positive_tweets[0])])).shape)
-
-
-if __name__ == '__main__':
-    main()
