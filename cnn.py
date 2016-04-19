@@ -48,7 +48,6 @@ class CNN:
                                               weights=[initial_embeddings] if initial_embeddings is not None else None ),
                               input='input')
 
-        # TODO Ensure that there is at least one element in filter_sizes_and_counts
         filters = []
         for size, count in filter_sizes_and_counts:
             # TODO Use sequential containers here?
