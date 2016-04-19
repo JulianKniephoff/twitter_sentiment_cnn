@@ -11,6 +11,7 @@ from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
 from keras.optimizers import SGD
 from keras.objectives import categorical_crossentropy
+from keras.preprocessing.sequence import pad_sequences
 
 
 def create_index(vocabulary):
@@ -42,20 +43,38 @@ class OneMaxPooling(Lambda):
         return config
 
 
+# TODO Make this handle padding
 class CNN:
-    def __init__(self, vocabulary):
-        self.index = create_index(vocabulary)
+    def __init__(self):
+        self.index = None
         self.network = None
+        self.embedding_layer = None
+        self.convolutions = []
+        self.pools = []
+        self.output = None
 
     def tweet_to_indices(self, tweet):
         return [self.index[word] for word in tweet if word in self.index]
 
     # TODO Make the argument list better
-    def build_network(self, initial_embeddings, embedding_dimension, filter_sizes_and_counts):
+    def build_network(self,
+                      vocabulary = None,
+                      initial_embeddings = None,
+                      embedding_dimension = None,
+                      filter_configuration = None,
+                      classes=2):
 
-        # TODO Is this idiomatic?
-        assert len(filter_sizes_and_counts) > 0
+        if not filter_configuration:
+            raise ValueError('There needs to be at least one filter')
+        if initial_embeddings:
+            # TODO Shouldn't this just be `.dimension`?
+            # TODO Should we complain if there was an explicit embedding dimension?
+            embedding_dimension = initial_embeddings.vector_size
+        else:
+            if not embedding_dimension:
+                raise ValueError('Either an embedding dimension or a set of initial embeddings must be given')
 
+        self.index = create_index(vocabulary)
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
@@ -67,9 +86,10 @@ class CNN:
                               input='input')
 
         filters = []
-        for size, count in filter_sizes_and_counts:
+        for size in filter_configuration:
             # TODO Use sequential containers here?
             # The question is then: Do we need to access them later on and how do we do that?
+            size = filter_configuration[size]
             convolution = Convolution1D(count, size)
             self.network.add_node(name='convolution-%d' % size,
                                   layer=convolution,
@@ -99,6 +119,36 @@ class CNN:
 
         # TODO Are these actually the parameters we want?
         self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
+
+    def fit(self, classes, **kwargs):
+        def output_for_class(class_number):
+            output = [0] * len(classes)
+            output[class_number] = 1
+            return output
+
+        # TODO Padding should be somehow configurable
+        self.network.fit(
+                {
+                    'input': np.concatenate(tuple(
+                        np.array(pad_sequences([self.tweet_to_indices(tweet) for tweet in tweets], 70, padding='post')) for tweets in classes
+                    )),
+                    'output': np.concatenate(tuple(
+                        np.array([output_for_class(class_number) for tweet in tweets]) for class_number, tweets in enumerate(classes)
+                    ))
+                },
+                **kwargs
+        )
+
+    def predict(self, tweets):
+        return self.network.predict({
+            'input': np.array(
+                    pad_sequences(
+                            [self.tweet_to_indices(tweet) for tweet in tweets],
+                            maxlen=70,
+                            padding='post'
+                    )
+            )
+        })
 
     def save(self, basedir):
         # TODO Create `basedir` if it does not exist
