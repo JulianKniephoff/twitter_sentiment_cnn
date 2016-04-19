@@ -18,6 +18,13 @@ def create_index(vocabulary):
     return {word: i for (i, word) in enumerate(vocabulary)}
 
 
+# TODO Does this live in the right scope?
+def one_max_pooling(x):
+    # TODO This import business is wonky
+    from theano.tensor import max
+    return max(x, 1)
+
+
 class CNN:
     def __init__(self, vocabulary):
         self.index = create_index(vocabulary)
@@ -32,9 +39,6 @@ class CNN:
         # TODO Is this idiomatic?
         assert len(filter_sizes_and_counts) > 0
 
-        def one_max_pooling(x):
-            from theano.tensor import max
-            return max(x, 1)
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
