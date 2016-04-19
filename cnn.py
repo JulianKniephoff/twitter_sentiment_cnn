@@ -59,23 +59,27 @@ class CNN:
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
+        self.embedding_layer = Embedding(input_dim=len(self.index) + 1,
+                                         output_dim=embedding_dimension,
+                                         weights=[initial_embeddings] if initial_embeddings is not None else None)
         self.network.add_node(name='embedding',
-                              layer=Embedding(input_dim=len(self.index),
-                                              output_dim=embedding_dimension,
-                                              weights=[initial_embeddings] if initial_embeddings is not None else None ),
+                              layer=self.embedding_layer,
                               input='input')
 
         filters = []
         for size, count in filter_sizes_and_counts:
             # TODO Use sequential containers here?
             # The question is then: Do we need to access them later on and how do we do that?
+            convolution = Convolution1D(count, size)
             self.network.add_node(name='convolution-%d' % size,
-                                  layer=Convolution1D(count, size),
+                                  layer=convolution,
                                   input='embedding')
             pooling = OneMaxPooling(count=count)
             self.network.add_node(name='max-pooling-%d' % size,
                                   layer=pooling,
                                   input='convolution-%d' % size)
+            self.convolutions.append(convolution)
+            self.pools.append(pooling)
             filters.append('max-pooling-%d' % size)
 
         # TODO Use sequential containers here, too
@@ -83,8 +87,11 @@ class CNN:
             inputs = {'input': filters[0]}
         else:
             inputs = {'inputs': filters}
+        # TODO This should be `softmax` instead of `'softmax'` IMO, but I got an error in `save`:
+        # AttributeError: 'Softmax' object has no attribute '__name__'
+        self.output = Dense(classes, activation='softmax')
         self.network.add_node(name='softmax',
-                              layer=Dense(2, activation=softmax),
+                              layer=self.output,
                               **inputs)
 
         self.network.add_output(name='output',
