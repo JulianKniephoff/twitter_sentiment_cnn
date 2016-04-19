@@ -90,10 +90,3 @@ class CNN:
             # TODO Do we have to compile the model again, here?
             self.network.load_weights(os.path.join(basedir, 'weights.h5'))
 
-
-def parse_tweets(path):
-    with open(path) as tweets_file:
-        return [row[1:] for row in csv.reader(tweets_file)]
-
-
-
