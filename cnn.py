@@ -77,20 +77,35 @@ class CNN:
             # TODO Shouldn't this just be `.dimension`?
             # TODO Should we complain if there was an explicit embedding dimension?
             embedding_dimension = initial_embeddings.vector_size
+
+            # TODO See above; don't rely on the interface of `gensim.models.Word2Vec`
+            vocabulary = initial_embeddings.index2word + list(vocabulary)
+            # TODO This is probably horribly slow; look for a dedicated sorted set
+            vocabulary = sorted(set(vocabulary), key=vocabulary.index)
         else:
             if not embedding_dimension:
                 raise ValueError('Either an embedding dimension or a set of initial embeddings must be given')
 
+        # There is no need for an explicit padding symbol in the index or vocabulary
+        self.padding_index = len(vocabulary)
         self.index = create_index(vocabulary)
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
-        self.embedding_layer = Embedding(input_dim=len(self.index) + 1,
-                                         output_dim=embedding_dimension,
-                                         weights=[initial_embeddings] if initial_embeddings is not None else None)
+        self.embedding_layer = Embedding(input_dim=len(self.index) + 1,  # + 1 for padding
+                                         output_dim=embedding_dimension)
         self.network.add_node(name='embedding',
                               layer=self.embedding_layer,
                               input='input')
+
+        # HACK The given initial embeddings might not contain some of the vocabulary items
+        #   So we initialize everything uniformly and then override the vectors we know.
+        #   This way, the unknown embeddings are still randomized
+        if initial_embeddings:
+            embedding_weights = self.embedding_layer.get_weights()[0]
+            for index, word in enumerate(initial_embeddings.index2word):
+                embedding_weights[index] = initial_embeddings[word]
+            self.embedding_layer.set_weights([embedding_weights])
 
         filters = []
         for size in filter_configuration:
