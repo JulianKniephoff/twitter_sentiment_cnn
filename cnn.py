@@ -58,10 +58,10 @@ class CNN:
 
     # TODO Make the argument list better
     def build_network(self,
-                      vocabulary = None,
-                      initial_embeddings = None,
-                      embedding_dimension = None,
-                      filter_configuration = None,
+                      vocabulary=None,
+                      initial_embeddings=None,
+                      embedding_dimension=None,
+                      filter_configuration=None,
                       classes=2):
 
         if not filter_configuration:
