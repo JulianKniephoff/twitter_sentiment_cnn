@@ -43,7 +43,6 @@ class OneMaxPooling(Lambda):
         return config
 
 
-# TODO Make this handle padding
 class CNN:
     def __init__(self):
         self.index = None
@@ -52,9 +51,17 @@ class CNN:
         self.convolutions = []
         self.pools = []
         self.output = None
+        self.padding_index = None
 
-    def tweet_to_indices(self, tweet):
-        return [self.index[word] for word in tweet if word in self.index]
+    def tweets_to_indices(self, tweets):
+        return pad_sequences(
+            [
+                [self.index[word] for word in tweet if word in self.index]
+                for tweet in tweets
+            ],
+            maxlen=70,
+            value=self.padding_index
+        )
 
     # TODO Make the argument list better
     def build_network(self,
@@ -120,35 +127,29 @@ class CNN:
         # TODO Are these actually the parameters we want?
         self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
 
-    def fit(self, classes, **kwargs):
+    def fit(self, classes, *args, **kwargs):
         def output_for_class(class_number):
             output = [0] * len(classes)
             output[class_number] = 1
             return output
 
-        # TODO Padding should be somehow configurable
         self.network.fit(
-                {
-                    'input': np.concatenate(tuple(
-                        np.array(pad_sequences([self.tweet_to_indices(tweet) for tweet in tweets], 70, padding='post')) for tweets in classes
-                    )),
-                    'output': np.concatenate(tuple(
-                        np.array([output_for_class(class_number) for tweet in tweets]) for class_number, tweets in enumerate(classes)
-                    ))
-                },
-                **kwargs
+            {
+                'input': np.concatenate(tuple(
+                    self.tweets_to_indices(class_) for class_ in classes
+                )),
+                'output': np.concatenate(tuple(
+                    np.array([output_for_class(class_number)] * len(class_)) for class_number, class_ in enumerate(classes)
+                ))
+            },
+            *args, **kwargs
         )
 
-    def predict(self, tweets):
-        return self.network.predict({
-            'input': np.array(
-                    pad_sequences(
-                            [self.tweet_to_indices(tweet) for tweet in tweets],
-                            maxlen=70,
-                            padding='post'
-                    )
-            )
-        })
+    def predict(self, tweets, *args, **kwargs):
+        return self.network.predict(
+            {'input': self.tweets_to_indices(tweets)},
+            *args, **kwargs
+        )
 
     def save(self, basedir):
         # TODO Create `basedir` if it does not exist
