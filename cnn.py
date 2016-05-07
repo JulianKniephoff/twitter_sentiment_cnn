@@ -15,7 +15,7 @@ from keras.preprocessing.sequence import pad_sequences
 
 
 def create_index(vocabulary):
-    return {word: i + 1 for (i, word) in enumerate(vocabulary)}
+    return {word: i for (i, word) in enumerate(vocabulary)}
 
 
 # TODO Does this live in the right scope?
