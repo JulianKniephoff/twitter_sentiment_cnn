@@ -89,7 +89,7 @@ class CNN:
         for size in filter_configuration:
             # TODO Use sequential containers here?
             # The question is then: Do we need to access them later on and how do we do that?
-            size = filter_configuration[size]
+            count = filter_configuration[size]
             convolution = Convolution1D(count, size)
             self.network.add_node(name='convolution-%d' % size,
                                   layer=convolution,
