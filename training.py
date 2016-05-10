@@ -87,15 +87,19 @@ def parse_tweets(file):
 
 def train(positive, unclear, negative, dimension, embeddings, filter_configuration, epochs, batch_size):
     # TODO Perform validation here, too
+    print('loading tweets')
     positive_tweets = parse_tweets(positive)
     unclear_tweets = parse_tweets(unclear)
     negative_tweets = parse_tweets(negative)
 
+    print('extracting vocabulary')
     vocabulary = extract_vocabulary(positive_tweets + unclear_tweets + negative_tweets)
     cnn = CNN()
 
+    print('building network')
     cnn.build_network(vocabulary, embeddings, dimension, filter_configuration, 3)
 
+    print('training')
     cnn.fit([positive_tweets, unclear_tweets, negative_tweets], nb_epoch=epochs, batch_size=batch_size)
 
     return cnn
