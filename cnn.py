@@ -155,9 +155,9 @@ class CNN:
                 'input': np.concatenate(tuple(
                     self.tweets_to_indices(class_) for class_ in classes
                 )),
-                'output': np.concatenate(tuple(
-                    np.array([output_for_class(class_number)] * len(class_)) for class_number, class_ in enumerate(classes)
-                ))
+                'output': np.array(
+                    [output_for_class(class_number) for class_number, class_ in enumerate(classes) for tweet in class_]
+                )
             },
             *args, **kwargs
         )
