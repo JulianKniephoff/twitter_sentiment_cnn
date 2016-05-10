@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import os.path
 import json
 
@@ -80,8 +82,8 @@ class CNN:
 
             # TODO See above; don't rely on the interface of `gensim.models.Word2Vec`
             vocabulary = initial_embeddings.index2word + list(vocabulary)
-            # TODO This is probably horribly slow; look for a dedicated sorted set
-            vocabulary = sorted(set(vocabulary), key=vocabulary.index)
+            # TODO This is not very elegant
+            vocabulary = OrderedDict([(v, None) for v in vocabulary]).keys()
         else:
             if not embedding_dimension:
                 raise ValueError('Either an embedding dimension or a set of initial embeddings must be given')
