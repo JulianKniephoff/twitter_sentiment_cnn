@@ -83,10 +83,10 @@ def extract_vocabulary(tweets):
 
 def parse_tweets(file):
     result = []
-    for i, row in csv.reader(file):
+    for i, row in enumerate(csv.reader(file)):
         if i % 1000 == 0:
             print('Read %d tweets' % i)
-        result.append(row)
+        result.append(row[1:])
     return result
 
 
