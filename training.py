@@ -82,7 +82,12 @@ def extract_vocabulary(tweets):
 
 
 def parse_tweets(file):
-    return [row[1:] for row in csv.reader(file)]
+    result = []
+    for i, row in csv.reader(file):
+        if i % 1000 == 0:
+            print('Read %d tweets' % i)
+        result.append(row)
+    return result
 
 
 def train(positive, unclear, negative, dimension, embeddings, filter_configuration, epochs, batch_size):
