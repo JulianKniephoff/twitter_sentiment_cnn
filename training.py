@@ -1,5 +1,7 @@
 import util
 
+from itertools import chain
+
 import argparse
 import csv
 import yaml
@@ -82,12 +84,10 @@ def extract_vocabulary(tweets):
 
 
 def parse_tweets(file):
-    result = []
     for i, row in enumerate(csv.reader(file)):
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             print('Read %d tweets' % i)
-        result.append(row[1:])
-    return result
+        yield row[1:]
 
 
 def train(positive, unclear, negative, dimension, embeddings, filter_configuration, epochs, batch_size):
@@ -98,7 +98,7 @@ def train(positive, unclear, negative, dimension, embeddings, filter_configurati
     negative_tweets = parse_tweets(negative)
 
     print('extracting vocabulary')
-    vocabulary = extract_vocabulary(positive_tweets + unclear_tweets + negative_tweets)
+    vocabulary = extract_vocabulary(chain(positive_tweets, unclear_tweets, negative_tweets))
     cnn = CNN()
 
     print('building network')
