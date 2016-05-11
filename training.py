@@ -97,6 +97,7 @@ def train(positive, unclear, negative, dimension, embeddings, filter_configurati
     unclear_tweets = parse_tweets(unclear)
     negative_tweets = parse_tweets(negative)
 
+    # TODO Perform validation here, too
     print('extracting vocabulary')
     vocabulary = extract_vocabulary(chain(positive_tweets, unclear_tweets, negative_tweets))
     cnn = CNN()
