@@ -75,6 +75,7 @@ class CNN:
 
         if not filter_configuration:
             raise ValueError('There needs to be at least one filter')
+
         if initial_embeddings:
             # TODO Shouldn't this just be `.dimension`?
             # TODO Should we complain if there was an explicit embedding dimension?
@@ -89,8 +90,8 @@ class CNN:
                 raise ValueError('Either an embedding dimension or a set of initial embeddings must be given')
 
         # There is no need for an explicit padding symbol in the index or vocabulary
-        self.padding_index = len(vocabulary)
         self.index = create_index(vocabulary)
+        self.padding_index = len(self.index)
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
