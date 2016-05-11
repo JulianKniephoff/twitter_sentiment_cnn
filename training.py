@@ -78,7 +78,7 @@ def parse_args():
 
 
 def extract_vocabulary(tweets):
-    return set([word for tweet in tweets for word in tweet])
+    return set(word for tweet in tweets for word in tweet)
 
 
 def parse_tweets(file):
