@@ -61,7 +61,7 @@ class CNN:
                 [self.index[word] for word in tweet if word in self.index]
                 for tweet in tweets
             ],
-            maxlen=70,
+            maxlen=70,  # 70 is the maximum number of tokens in a 140 character string
             value=self.padding_index
         )
 
