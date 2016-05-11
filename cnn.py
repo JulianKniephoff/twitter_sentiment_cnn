@@ -54,6 +54,7 @@ class CNN:
         self.pools = []
         self.output = None
         self.padding_index = None
+        self.classes = None
 
     def tweets_to_indices(self, tweets):
         return pad_sequences(
@@ -134,7 +135,8 @@ class CNN:
             inputs = {'inputs': filters}
         # TODO This should be `softmax` instead of `'softmax'` IMO, but I got an error in `save`:
         # AttributeError: 'Softmax' object has no attribute '__name__'
-        self.output = Dense(classes, activation='softmax')
+        self.classes = classes
+        self.output = Dense(self.classes, activation='softmax')
         self.network.add_node(name='softmax',
                               layer=self.output,
                               **inputs)
