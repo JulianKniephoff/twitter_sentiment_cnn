@@ -8,7 +8,7 @@ import yaml
 
 from gensim.models import Word2Vec
 
-from cnn import CNN
+from cnn import CNN, LabeledTweet
 
 
 def positive_integer(string):

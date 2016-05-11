@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 
 import os.path
 import json
@@ -14,6 +14,9 @@ from keras.layers.convolutional import Convolution1D
 from keras.optimizers import SGD
 from keras.objectives import categorical_crossentropy
 from keras.preprocessing.sequence import pad_sequences
+
+
+LabeledTweet = namedtuple('LabeledTweet', ['tweet', 'label'])
 
 
 def create_index(vocabulary):
