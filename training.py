@@ -45,13 +45,7 @@ def word2vec_model(string):
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a CNN')
     # TODO More validations for these parameters?
-    parser.add_argument('-p', '--positive',
-                        type=argparse.FileType('r'),
-                        required=True)
-    parser.add_argument('-u', '--unclear',
-                        type=argparse.FileType('r'),
-                        required=True)
-    parser.add_argument('-n', '--negative',
+    parser.add_argument('-t', '--dataset',
                         type=argparse.FileType('r'),
                         required=True)
 
@@ -83,37 +77,37 @@ def extract_vocabulary(tweets):
     return set(word for tweet in tweets for word in tweet)
 
 
-def parse_tweets(file):
-    for i, row in enumerate(csv.reader(file)):
-        if i % 10000 == 0:
-            print('Read %d tweets' % i)
-        yield row[1:]
+def parse_tweets(filename):
+    with open(filename) as file:
+        for i, row in enumerate(csv.reader(file)):
+            if i % 100 == 0:
+                pass  # print('Read %d tweets' % i)
+            yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(positive, unclear, negative, dimension, embeddings, filter_configuration, epochs, batch_size):
-    # TODO Perform validation here, too
-    print('loading tweets')
-    positive_tweets = parse_tweets(positive)
-    unclear_tweets = parse_tweets(unclear)
-    negative_tweets = parse_tweets(negative)
+def train(dataset, dimension, embeddings, filters, epochs, batch_size):
+    tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
     # TODO Perform validation here, too
     print('extracting vocabulary')
-    vocabulary = extract_vocabulary(chain(positive_tweets, unclear_tweets, negative_tweets))
+    vocabulary = extract_vocabulary(labeled_tweet.tweet for labeled_tweet in parse_tweets(dataset))
     cnn = CNN()
 
     print('building network')
-    cnn.build_network(vocabulary, embeddings, dimension, filter_configuration, 3)
+    cnn.build_network(vocabulary, embeddings, dimension, filters, 3)
 
     print('training')
-    cnn.fit([positive_tweets, unclear_tweets, negative_tweets], nb_epoch=epochs, batch_size=batch_size)
+    # We have to read the file here, again, possibly multiple times
+    # the previous iterator does not work anymore
+    # TODO This is ugly
+    cnn.fit_generator(lambda: parse_tweets(dataset), nb_epoch=epochs, batch_size=batch_size, samples_per_epoch=tweet_count)
 
     return cnn
 
 
 def main():
     args = parse_args()
-    cnn = train(args.positive, args.unclear, args.negative, args.dimension, args.embeddings, args.filters, args.epochs, args.batch)
+    cnn = train(args.dataset.name, args.dimension, args.embeddings, args.filters, args.epochs, args.batch)
     cnn.save(args.output)
 
 

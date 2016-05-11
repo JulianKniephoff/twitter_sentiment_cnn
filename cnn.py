@@ -150,29 +150,47 @@ class CNN:
         # TODO Are these actually the parameters we want?
         self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
 
-    def fit(self, classes, *args, **kwargs):
-        def output_for_class(class_number):
-            output = [0] * len(classes)
-            output[class_number] = 1
-            return output
+    def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
+        # TODO This should not be a closure ...
+        #   Maybe this should not even be here ...
+        def infinite_generator():
+            while True:
+                epoch_generator = generator_generator()
+                yield from epoch_generator
 
-        self.network.fit(
-            {
-                'input': np.concatenate(tuple(
-                    self.tweets_to_indices(class_) for class_ in classes
-                )),
+        generator = infinite_generator()
+
+        def labeled_tweets_to_keras(tweets):
+            def output_for_class(class_number):
+                output = [0] * self.classes
+                output[class_number] = 1
+                return output
+
+            return {
+                'input': self.tweets_to_indices(
+                    labeled_tweet.tweet for labeled_tweet in tweets
+                ),
                 'output': np.array(
-                    [output_for_class(class_number) for class_number, class_ in enumerate(classes) for tweet in class_]
+                    [output_for_class(labeled_tweet.label) for labeled_tweet in tweets]
                 )
-            },
+            }
+
+        def tweet_generator():
+            while True:  # TODO This seems redundant. Can we compose generators somehow?
+                yield labeled_tweets_to_keras(
+                    [next(generator) for _ in range(batch_size)]
+                )
+
+        self.network.fit_generator(
+            tweet_generator(),
             *args, **kwargs
         )
 
-    def predict(self, tweets, *args, **kwargs):
-        return self.network.predict(
-            {'input': self.tweets_to_indices(tweets)},
-            *args, **kwargs
-        )
+    #def predict(self, tweets, *args, **kwargs):
+    #    return self.network.predict(
+    #        {'input': self.tweets_to_indices(tweets)},
+    #        *args, **kwargs
+    #    )
 
     def save(self, basedir):
         # TODO Create `basedir` if it does not exist
