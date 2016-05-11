@@ -91,6 +91,7 @@ def train(dataset, dimension, embeddings, filters, epochs, batch_size):
     # TODO Perform validation here, too
     print('extracting vocabulary')
     vocabulary = extract_vocabulary(labeled_tweet.tweet for labeled_tweet in parse_tweets(dataset))
+    print(len(vocabulary))
     cnn = CNN()
 
     print('building network')
