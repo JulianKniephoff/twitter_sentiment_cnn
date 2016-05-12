@@ -61,10 +61,12 @@ def parse_args():
 
     parser.add_argument('-c', '--epochs',
                         type=positive_integer,
-                        default=1)
+                        default=1,
+                        help='default: %(default)s')
     parser.add_argument('-b', '--batch',
                         type=positive_integer,
-                        default=50)
+                        default=50,
+                        help='default: %(default)s')
 
     # TODO We should ensure that this directory exists or create it
     parser.add_argument('-o', '--output',
