@@ -3,6 +3,7 @@ import util
 from itertools import chain
 
 import argparse
+from argparse import ArgumentParser, ArgumentTypeError
 import csv
 import yaml
 
@@ -15,7 +16,7 @@ def positive_integer(string):
     try:
         integer = util.positive_integer(string)
     except ValueError:
-        raise argparse.ArgumentTypeError('Argument needs to be a positive integer')
+        raise ArgumentTypeError('Argument needs to be a positive integer')
     return integer
 
 
@@ -23,14 +24,14 @@ def filter_configuration(string):
     try:
         configuration = yaml.load(string)
     except yaml.ParserError:
-        raise argparse.ArgumentTypeError('Not a valid YAML string')
+        raise ArgumentTypeError('Not a valid YAML string')
 
     for size, count in configuration.items():
         for name, value in [('size', size), ('count', count)]:
             try:
                 util.positive_integer(value)
             except ValueError:
-                raise argparse.ArgumentTypeError('%s needs to be a positive integer' % name)
+                raise ArgumentTypeError('%s needs to be a positive integer' % name)
     return configuration
 
 
@@ -39,11 +40,11 @@ def word2vec_model(string):
         return Word2Vec.load(string)
     # TODO Catch more specific exceptions
     except:
-        raise argparse.ArgumentTypeError('Could not read embeddings from %s' % string)
+        raise ArgumentTypeError('Could not read embeddings from %s' % string)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a CNN')
+    parser = ArgumentParser(description='Train a CNN')
     # TODO More validations for these parameters?
     parser.add_argument('-t', '--dataset',
                         type=argparse.FileType('r'),
