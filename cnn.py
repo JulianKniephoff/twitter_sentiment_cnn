@@ -66,7 +66,8 @@ class CNN:
                 for tweet in tweets
             ],
             maxlen=70,  # 70 is the maximum number of tokens in a 140 character string
-            value=self.padding_index
+            value=self.padding_index,
+            padding='post'
         )
 
     # TODO Make the argument list better
