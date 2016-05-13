@@ -72,48 +72,40 @@ class CNN:
 
     # TODO Make the argument list better
     def build_network(self,
-                      vocabulary=None,
-                      initial_embeddings=None,
-                      embedding_dimension=None,
-                      filter_configuration=None,
+                      initial_embeddings,
+                      filter_configuration,
+                      vocabulary_size=None,
                       classes=2):
 
         if not filter_configuration:
             raise ValueError('There needs to be at least one filter')
+        if not initial_embeddings:
+            raise ValueError ("We need pretrained word embeddings")
 
-        if initial_embeddings:
-            # TODO Shouldn't this just be `.dimension`?
-            # TODO Should we complain if there was an explicit embedding dimension?
-            embedding_dimension = initial_embeddings.vector_size
+        vocabulary = sorted(
+            initial_embeddings.vocab,
+            key=lambda word: initial_embeddings.vocab[word].count,
+            reverse=True
+        )[:vocabulary_size]
 
-            # TODO See above; don't rely on the interface of `gensim.models.Word2Vec`
-            vocabulary = initial_embeddings.index2word + list(vocabulary)
-            # TODO This is not very elegant
-            vocabulary = OrderedDict((v, None) for v in vocabulary).keys()
-        else:
-            if not embedding_dimension:
-                raise ValueError('Either an embedding dimension or a set of initial embeddings must be given')
-
-        # There is no need for an explicit padding symbol in the index or vocabulary
         self.index = create_index(vocabulary)
-        self.padding_index = len(self.index)
+        # There is no need for an explicit padding symbol in the index or vocabulary
+        self.padding_index = len(vocabulary)
 
         self.network = Graph()
         self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
+
+        initial_weights = [np.array(
+            [initial_embeddings[word] for word in vocabulary] +
+            [np.zeros(initial_embeddings.vector_size)]
+        )]
+
         self.embedding_layer = Embedding(input_dim=len(self.index) + 1,  # + 1 for padding
-                                         output_dim=embedding_dimension)
+                                         output_dim=initial_embeddings.vector_size,
+                                         weights=initial_weights)
         self.network.add_node(name='embedding',
                               layer=self.embedding_layer,
                               input='input')
-
-        # HACK The given initial embeddings might not contain some of the vocabulary items
-        #   So we initialize everything uniformly and then override the vectors we know.
-        #   This way, the unknown embeddings are still randomized
-        if initial_embeddings:
-            embedding_weights = self.embedding_layer.get_weights()[0]
-            for index, word in enumerate(initial_embeddings.index2word):
-                embedding_weights[index] = initial_embeddings[word]
-            self.embedding_layer.set_weights([embedding_weights])
 
         filters = []
         for size in filter_configuration:

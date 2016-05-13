@@ -50,11 +50,9 @@ def parse_args():
                         type=argparse.FileType('r'),
                         required=True)
 
-    embedding_arguments = parser.add_mutually_exclusive_group(required=True)
-    embedding_arguments.add_argument('-d', '--dimension',
-                                     type=positive_integer)
-    embedding_arguments.add_argument('-e', '--embeddings',
-                                     type=word2vec_model)
+    parser.add_argument('-e', '--embeddings',
+                        type=word2vec_model,
+                        required=True)
 
     parser.add_argument('-f', '--filters',
                         type=filter_configuration,
@@ -76,10 +74,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def extract_vocabulary(tweets):
-    return set(word for tweet in tweets for word in tweet)
-
-
 def parse_tweets(filename):
     with open(filename) as file:
         for i, row in enumerate(csv.reader(file)):
@@ -88,30 +82,35 @@ def parse_tweets(filename):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(dataset, dimension, embeddings, filters, epochs, batch_size):
+def train(dataset, embeddings, filters, epochs, batch_size):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
-    # TODO Perform validation here, too
-    print('extracting vocabulary')
-    vocabulary = extract_vocabulary(labeled_tweet.tweet for labeled_tweet in parse_tweets(dataset))
-    print(len(vocabulary))
-    cnn = CNN()
-
     print('building network')
-    cnn.build_network(vocabulary, embeddings, dimension, filters, 3)
+    cnn = CNN()
+    cnn.build_network(embeddings, filters, classes=3)
 
     print('training')
     # We have to read the file here, again, possibly multiple times
     # the previous iterator does not work anymore
-    # TODO This is ugly
-    cnn.fit_generator(lambda: parse_tweets(dataset), nb_epoch=epochs, batch_size=batch_size, samples_per_epoch=tweet_count)
+    cnn.fit_generator(
+        lambda: parse_tweets(dataset),  # TODO This is ugly
+        nb_epoch=epochs,
+        batch_size=batch_size,
+        samples_per_epoch=tweet_count
+    )
 
     return cnn
 
 
 def main():
     args = parse_args()
-    cnn = train(args.dataset.name, args.dimension, args.embeddings, args.filters, args.epochs, args.batch)
+    cnn = train(
+        args.dataset.name,
+        args.embeddings,
+        args.filters,
+        args.epochs,
+        args.batch
+    )
     cnn.save(args.output)
 
 
