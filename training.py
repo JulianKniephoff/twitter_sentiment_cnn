@@ -58,6 +58,9 @@ def parse_args():
                         type=filter_configuration,
                         required=True)
 
+    parser.add_argument('-v', '--vocabulary-size',
+                        type=positive_integer)
+
     parser.add_argument('-c', '--epochs',
                         type=positive_integer,
                         default=1,
@@ -82,12 +85,17 @@ def parse_tweets(filename):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(dataset, embeddings, filters, epochs, batch_size):
+def train(dataset, embeddings, vocabulary_size, filters, epochs, batch_size):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
     print('building network')
     cnn = CNN()
-    cnn.build_network(embeddings, filters, classes=3)
+    cnn.build_network(
+        embeddings,
+        filters,
+        vocabulary_size=vocabulary_size,
+        classes=3
+    )
 
     print('training')
     # We have to read the file here, again, possibly multiple times
@@ -107,6 +115,7 @@ def main():
     cnn = train(
         args.dataset.name,
         args.embeddings,
+        args.vocabulary_size,
         args.filters,
         args.epochs,
         args.batch
