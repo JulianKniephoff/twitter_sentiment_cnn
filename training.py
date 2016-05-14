@@ -10,17 +10,17 @@ from gensim.models import Word2Vec
 from cnn import CNN, LabeledTweet
 
 
-def positive_integer(string):
+def positive_integer(argument):
     try:
-        integer = util.positive_integer(string)
+        integer = util.positive_integer(argument)
     except ValueError:
         raise ArgumentTypeError('Argument needs to be a positive integer')
     return integer
 
 
-def filter_configuration(string):
+def filter_configuration(argument):
     try:
-        configuration = yaml.load(string)
+        configuration = yaml.load(argument)
     except yaml.ParserError:
         raise ArgumentTypeError('Not a valid YAML string')
 
@@ -33,12 +33,12 @@ def filter_configuration(string):
     return configuration
 
 
-def word2vec_model(string):
+def word2vec_model(argument):
     try:
-        return Word2Vec.load(string)
+        return Word2Vec.load(argument)
     # TODO Catch more specific exceptions
     except:
-        raise ArgumentTypeError('Could not read embeddings from %s' % string)
+        raise ArgumentTypeError('Could not read embeddings from %s' % argument)
 
 
 def parse_args():
