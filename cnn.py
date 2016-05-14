@@ -76,6 +76,7 @@ class CNN:
                       filter_configuration,
                       vocabulary_size=None,
                       dropout_rate=None,
+                      activation='linear',
                       classes=2):
 
         if not filter_configuration:
@@ -113,7 +114,7 @@ class CNN:
             # TODO Use sequential containers here?
             # The question is then: Do we need to access them later on and how do we do that?
             count = filter_configuration[size]
-            convolution = Convolution1D(count, size)
+            convolution = Convolution1D(count, size, activation=activation)
             self.network.add_node(name='convolution-%d' % size,
                                   layer=convolution,
                                   input='embedding')
