@@ -199,7 +199,7 @@ class CNN:
         with open(os.path.join(basedir, 'model.yml'), 'w') as model_file:
             model_file.write(self.network.to_yaml())
         # NOTE Maybe use `overwrite=True`
-        self.network.save_weights(os.path.join(basedir, 'weights.h5'))
+        self.network.save_weights(os.path.join(basedir, 'weights.h5'), overwrite=True)
         with open(os.path.join(basedir, 'index.json'), 'w') as index_file:
             json.dump(self.index, index_file)
 
