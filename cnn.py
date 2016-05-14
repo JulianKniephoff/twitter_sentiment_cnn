@@ -70,7 +70,6 @@ class CNN:
             padding='post'
         )
 
-    # TODO Make the argument list better
     def build_network(self,
                       initial_embeddings,
                       filter_configuration,
