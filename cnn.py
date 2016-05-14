@@ -211,4 +211,6 @@ class CNN:
         self.network.load_weights(os.path.join(basedir, 'weights.h5'))
         with open(os.path.join(basedir, 'index.json'), 'r') as index_file:
             self.index = json.load(index_file)
+            self.padding_index = len(self.index)
+            self.classes = self.network.outputs['output'].output_dim
 
