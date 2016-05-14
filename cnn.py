@@ -11,7 +11,7 @@ from keras.models import Graph, model_from_yaml
 from keras.layers.core import Dense, Lambda
 from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
-from keras.optimizers import SGD
+from keras.optimizers import Adagrad
 from keras.objectives import categorical_crossentropy
 from keras.preprocessing.sequence import pad_sequences
 
@@ -140,7 +140,7 @@ class CNN:
                                 input='softmax')
 
         # TODO Are these actually the parameters we want?
-        self.network.compile(optimizer=SGD(), loss={'output': categorical_crossentropy})
+        self.network.compile(optimizer=Adagrad(), loss={'output': categorical_crossentropy})
 
     def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
         # TODO This should not be a closure ...
