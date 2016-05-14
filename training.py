@@ -18,6 +18,14 @@ def positive_integer(argument):
     return integer
 
 
+def rate(argument):
+    try:
+        rate = util.rate(argument)
+    except ValueError:
+        raise ArgumentTypeError('Argument needs to be a number in the interval [0, 1]')
+    return rate
+
+
 def filter_configuration(argument):
     try:
         configuration = yaml.load(argument)
@@ -59,6 +67,9 @@ def parse_args():
     parser.add_argument('-v', '--vocabulary-size',
                         type=positive_integer)
 
+    parser.add_argument('-d', '--dropout-rate',
+                        type=rate)
+
     parser.add_argument('-c', '--epochs',
                         type=positive_integer,
                         default=1,
@@ -83,7 +94,7 @@ def parse_tweets(filename):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(dataset, embeddings, vocabulary_size, filters, epochs, batch_size):
+def train(dataset, embeddings, vocabulary_size, filters, dropout_rate, epochs, batch_size):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
     print('building network')
@@ -92,6 +103,7 @@ def train(dataset, embeddings, vocabulary_size, filters, epochs, batch_size):
         embeddings,
         filters,
         vocabulary_size=vocabulary_size,
+        dropout_rate=dropout_rate,
         classes=3
     )
 
@@ -115,6 +127,7 @@ def main():
         args.embeddings,
         args.vocabulary_size,
         args.filters,
+        args.dropout_rate,
         args.epochs,
         args.batch
     )
