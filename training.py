@@ -70,6 +70,11 @@ def parse_args():
     parser.add_argument('-d', '--dropout-rate',
                         type=rate)
 
+    # TODO Validate this
+    parser.add_argument('-a', '--activation',
+                        default='linear',
+                        help='default: %(default)s')
+
     parser.add_argument('-c', '--epochs',
                         type=positive_integer,
                         default=1,
@@ -94,7 +99,7 @@ def parse_tweets(filename):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(dataset, embeddings, vocabulary_size, filters, dropout_rate, epochs, batch_size):
+def train(dataset, embeddings, vocabulary_size, filters, dropout_rate, activation, epochs, batch_size):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
     print('building network')
@@ -128,6 +133,7 @@ def main():
         args.vocabulary_size,
         args.filters,
         args.dropout_rate,
+        args.activation,
         args.epochs,
         args.batch
     )
