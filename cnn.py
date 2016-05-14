@@ -124,7 +124,7 @@ class CNN:
             filters.append('max-pooling-%d' % size)
 
         # TODO Use sequential containers here, too
-        if len(filters) == 1:
+        if len(filters) is 1:
             inputs = {'input': filters[0]}
         else:
             inputs = {'inputs': filters}
