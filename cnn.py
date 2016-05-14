@@ -1,6 +1,9 @@
 from collections import namedtuple, OrderedDict
 
 import os.path as path
+from os.path import isdir
+from os import makedirs
+
 import json
 
 import numpy as np
@@ -196,7 +199,8 @@ class CNN:
     #    )
 
     def save(self, basedir):
-        # TODO Create `basedir` if it does not exist
+        makedirs(basedir, exist_ok=True)
+
         with open(path.join(basedir, 'model.yml'), 'w') as model_file:
             model_file.write(self.network.to_yaml())
         # NOTE Maybe use `overwrite=True`
