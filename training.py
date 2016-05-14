@@ -56,25 +56,33 @@ def parse_args():
                         type=argparse.FileType('r'),
                         required=True)
 
-    model_group = parser.add_mutually_exclusive_group(required=True)
-    model_group.add_argument('-m', '--model')  # TODO Validation
-    model_group.add_argument('-e', '--embeddings',
-                             type=word2vec_model)
+    # TODO Making a subcommand mandatory currently requires setting a `dest
+    #   and setting the `required` property.
+    #   I don't think this is intended behavior
+    subparsers = parser.add_subparsers(dest='command')
+    subparsers.required = True
+    load_subparser = subparsers.add_parser('load')
+    load_subparser.add_argument('model')  # TODO Validation
 
-    parser.add_argument('-f', '--filters',
-                        type=filter_configuration,
-                        required=True)
+    new_subparser = subparsers.add_parser('new')
+    new_subparser.add_argument('-e', '--embeddings',
+                               type=word2vec_model,
+                               required=True)
 
-    parser.add_argument('-v', '--vocabulary-size',
-                        type=positive_integer)
+    new_subparser.add_argument('-f', '--filters',
+                               type=filter_configuration,
+                               required=True)
 
-    parser.add_argument('-d', '--dropout-rate',
-                        type=rate)
+    new_subparser.add_argument('-v', '--vocabulary-size',
+                               type=positive_integer)
+
+    new_subparser.add_argument('-d', '--dropout-rate',
+                               type=rate)
 
     # TODO Validate this
-    parser.add_argument('-a', '--activation',
-                        default='linear',
-                        help='default: %(default)s')
+    new_subparser.add_argument('-a', '--activation',
+                               default='linear',
+                               help='default: %(default)s')
 
     parser.add_argument('-c', '--epochs',
                         type=positive_integer,
@@ -134,12 +142,13 @@ def main():
     args = parse_args()
     cnn = train(
         args.dataset.name,
-        args.embeddings,
-        args.model,
-        args.vocabulary_size,
-        args.filters,
-        args.dropout_rate,
-        args.activation,
+        # TODO Wow, what a hack. O_o
+        args.embeddings if args.command == 'new' else None,
+        args.model if args.command == 'load' else None,
+        args.vocabulary_size if args.command == 'new' else None,
+        args.filters if args.command == 'new' else None,
+        args.dropout_rate if args.command == 'new' else None,
+        args.activation if args.command == 'new' else None,
         args.epochs,
         args.batch
     )
