@@ -8,7 +8,7 @@ import numpy as np
 from theano.tensor.nnet import softmax
 
 from keras.models import Graph, model_from_yaml
-from keras.layers.core import Dense, Lambda
+from keras.layers.core import Dense, Lambda, Dropout
 from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Convolution1D
 from keras.optimizers import Adagrad
@@ -55,7 +55,8 @@ class CNN:
         self.embedding_layer = None
         self.convolutions = []
         self.pools = []
-        self.output = None
+        self.dense_layer = None
+        self.dropout_layer = None
         self.padding_index = None
         self.classes = None
 
@@ -74,6 +75,7 @@ class CNN:
                       initial_embeddings,
                       filter_configuration,
                       vocabulary_size=None,
+                      dropout_rate=None,
                       classes=2):
 
         if not filter_configuration:
@@ -131,13 +133,21 @@ class CNN:
         # TODO This should be `softmax` instead of `'softmax'` IMO, but I got an error in `save`:
         # AttributeError: 'Softmax' object has no attribute '__name__'
         self.classes = classes
-        self.output = Dense(self.classes, activation='softmax')
-        self.network.add_node(name='softmax',
-                              layer=self.output,
+        self.dense_layer = Dense(self.classes, activation='softmax')
+        self.network.add_node(name='dense',
+                              layer=self.dense_layer,
                               **inputs)
 
-        self.network.add_output(name='output',
-                                input='softmax')
+        if dropout_rate:
+            self.dropout_layer = Dropout(p=dropout_rate)
+            self.network.add_node(name='dropout',
+                                  layer=self.dropout_layer,
+                                  input='dense')
+            self.network.add_output(name='output',
+                                    input='dropout')
+        else:
+            self.network.add_output(name='output',
+                                    input='dense')
 
         # TODO Are these actually the parameters we want?
         self.network.compile(optimizer=Adagrad(), loss={'output': categorical_crossentropy})
