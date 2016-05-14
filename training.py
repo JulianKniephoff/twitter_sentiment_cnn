@@ -1,7 +1,5 @@
 import util
 
-from itertools import chain
-
 import argparse
 from argparse import ArgumentParser, ArgumentTypeError
 import csv
