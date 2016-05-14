@@ -56,9 +56,10 @@ def parse_args():
                         type=argparse.FileType('r'),
                         required=True)
 
-    parser.add_argument('-e', '--embeddings',
-                        type=word2vec_model,
-                        required=True)
+    model_group = parser.add_mutually_exclusive_group(required=True)
+    model_group.add_argument('-m', '--model')  # TODO Validation
+    model_group.add_argument('-e', '--embeddings',
+                             type=word2vec_model)
 
     parser.add_argument('-f', '--filters',
                         type=filter_configuration,
@@ -99,18 +100,22 @@ def parse_tweets(filename):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
-def train(dataset, embeddings, vocabulary_size, filters, dropout_rate, activation, epochs, batch_size):
+def train(dataset, embeddings, model, vocabulary_size, filters, dropout_rate, activation, epochs, batch_size):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
-    print('building network')
     cnn = CNN()
-    cnn.build_network(
-        embeddings,
-        filters,
-        vocabulary_size=vocabulary_size,
-        dropout_rate=dropout_rate,
-        classes=3
-    )
+    if model:
+        print('loading preexisting model')
+        cnn.load(model)
+    else:
+        print('building network')
+        cnn.build_network(
+            embeddings,
+            filters,
+            vocabulary_size=vocabulary_size,
+            dropout_rate=dropout_rate,
+            classes=3
+        )
 
     print('training')
     # We have to read the file here, again, possibly multiple times
@@ -130,6 +135,7 @@ def main():
     cnn = train(
         args.dataset.name,
         args.embeddings,
+        args.model,
         args.vocabulary_size,
         args.filters,
         args.dropout_rate,
