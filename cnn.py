@@ -130,6 +130,14 @@ class CNN:
             inputs = {'input': filters[0]}
         else:
             inputs = {'inputs': filters}
+
+        if dropout_rate:
+            self.dropout_layer = Dropout(p=dropout_rate)
+            self.network.add_node(name='dropout',
+                                  layer=self.dropout_layer,
+                                  **inputs)
+            inputs = {'input': 'dropout'}
+
         # TODO This should be `softmax` instead of `'softmax'` IMO, but I got an error in `save`:
         # AttributeError: 'Softmax' object has no attribute '__name__'
         self.classes = classes
@@ -138,16 +146,8 @@ class CNN:
                               layer=self.dense_layer,
                               **inputs)
 
-        if dropout_rate:
-            self.dropout_layer = Dropout(p=dropout_rate)
-            self.network.add_node(name='dropout',
-                                  layer=self.dropout_layer,
-                                  input='dense')
-            self.network.add_output(name='output',
-                                    input='dropout')
-        else:
-            self.network.add_output(name='output',
-                                    input='dense')
+        self.network.add_output(name='output',
+                                input='dense')
 
         # TODO Are these actually the parameters we want?
         self.network.compile(optimizer=Adagrad(), loss={'output': categorical_crossentropy})
