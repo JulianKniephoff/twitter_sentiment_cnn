@@ -1,4 +1,4 @@
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 import os.path as path
 from os import makedirs
