@@ -54,8 +54,8 @@ def evaluate(model, train_tweets, test_tweets, train_labels, test_labels, batch_
     predicted_labels = [p.argmax() for p in predictions['output']]
 
     return EvaluationResult(
-        p=precision_score(test_labels, predicted_labels),
-        r=recall_score(test_labels, predicted_labels)
+        p=precision_score(test_labels, predicted_labels, average=None),
+        r=recall_score(test_labels, predicted_labels, average=None)
     )
 
 
