@@ -1,7 +1,6 @@
 from collections import namedtuple
 
-import os.path as path
-from os import makedirs
+from os import path, makedirs
 
 import json
 
