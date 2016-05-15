@@ -1,13 +1,13 @@
 import util
+from util import parse_tweets
 
 import argparse
 from argparse import ArgumentParser, ArgumentTypeError
-import csv
 import yaml
 
 from gensim.models import Word2Vec
 
-from cnn import CNN, LabeledTweet
+from cnn import CNN
 
 
 def positive_integer(argument):
@@ -98,14 +98,6 @@ def parse_args():
                         required=True)
 
     return parser.parse_args()
-
-
-def parse_tweets(filename):
-    with open(filename) as file:
-        for i, row in enumerate(csv.reader(file)):
-            if i % 100 == 0:
-                pass  # print('Read %d tweets' % i)
-            yield LabeledTweet(tweet=row[2:], label=int(row[0]))
 
 
 def train(dataset, embeddings, model, vocabulary_size, filters, dropout_rate, activation, epochs, batch_size):
