@@ -1,7 +1,6 @@
 from collections import namedtuple, OrderedDict
 
 import os.path as path
-from os.path import isdir
 from os import makedirs
 
 import json
