@@ -193,11 +193,11 @@ class CNN:
             *args, **kwargs
         )
 
-    #def predict(self, tweets, *args, **kwargs):
-    #    return self.network.predict(
-    #        {'input': self.tweets_to_indices(tweets)},
-    #        *args, **kwargs
-    #    )
+    def predict(self, tweets, *args, **kwargs):
+        return self.network.predict(
+            {'input': self.tweets_to_indices(tweets)},
+            *args, **kwargs
+        )
 
     def save(self, basedir):
         makedirs(basedir, exist_ok=True)
