@@ -62,6 +62,8 @@ class CNN:
         self.padding_index = None
         self.classes = None
 
+    # TODO Do the following two methods need to be public?
+
     def tweets_to_indices(self, tweets):
         return pad_sequences(
             [
@@ -72,6 +74,21 @@ class CNN:
             value=self.padding_index,
             padding='post'
         )
+
+    def prepare_labeled_tweets(self, tweets):
+        def output_for_class(class_number):
+            output = [0] * self.classes
+            output[class_number] = 1
+            return output
+
+        return {
+            'input': self.tweets_to_indices(
+                labeled_tweet.tweet for labeled_tweet in tweets
+            ),
+            'output': np.array(
+                [output_for_class(labeled_tweet.label) for labeled_tweet in tweets]
+            )
+        }
 
     def build_network(self,
                       initial_embeddings,
@@ -165,24 +182,9 @@ class CNN:
 
         generator = infinite_generator()
 
-        def labeled_tweets_to_keras(tweets):
-            def output_for_class(class_number):
-                output = [0] * self.classes
-                output[class_number] = 1
-                return output
-
-            return {
-                'input': self.tweets_to_indices(
-                    labeled_tweet.tweet for labeled_tweet in tweets
-                ),
-                'output': np.array(
-                    [output_for_class(labeled_tweet.label) for labeled_tweet in tweets]
-                )
-            }
-
         def tweet_generator():
             while True:  # TODO This seems redundant. Can we compose generators somehow?
-                yield labeled_tweets_to_keras(
+                yield self.prepare_labeled_tweets(
                     [next(generator) for _ in range(batch_size)]
                 )
 
