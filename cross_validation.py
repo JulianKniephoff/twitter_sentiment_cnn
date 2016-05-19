@@ -2,6 +2,8 @@ from util import parse_tweets
 
 from collections import namedtuple
 
+import csv
+
 import argparse
 from argparse import ArgumentParser
 from argtypes import positive_integer
@@ -24,6 +26,12 @@ def parse_args():
     parser.add_argument('-d', '--dataset',
                         required=True,
                         type=argparse.FileType('r'))
+
+    # TODO It sucks that we have to specify an output file.
+    #   We can't use stdout, though, since keras is cluttering that up.
+    parser.add_argument('-o', '--output',
+                        required=True,
+                        type=argparse.FileType('w'))
 
     parser.add_argument('-b', '--batch-size',
                         default=50,
@@ -59,12 +67,20 @@ def evaluate(model, train_tweets, test_tweets, train_labels, test_labels, batch_
     )
 
 
-def cross_validate(model, dataset, epochs, batch_size):
+def cross_validate(model, dataset, epochs, batch_size, output):
     test_tweets = list(parse_tweets(dataset.name))  # TODO It sucks that this reopens the file
     n = len(test_tweets)
 
     texts = np.array([labeled_tweet.tweet for labeled_tweet in test_tweets])
     labels = np.array([labeled_tweet.label for labeled_tweet in test_tweets])
+
+    output_writer = csv.DictWriter(
+        output,
+        [
+            'positive_precision', 'negative_precision', 'neutral_precision',
+            'positive_recall', 'negative_recall', 'neutral_recall'
+        ]
+    )
 
     cv = cross_validation.KFold(n, 10)
     for train, test in cv:
@@ -74,12 +90,14 @@ def cross_validate(model, dataset, epochs, batch_size):
             labels[train], labels[test],
             batch_size, epochs
         )
-        print('precision: ', scores.p)
-        print('recall: ', scores.r)
-
-    #print(precision_score(true_labels, predicted_labels))
-    #print(recall_score(true_labels, predicted_labels))
-    #print(f1_score(true_labels, predicted_labels))
+        output_writer.write_row({
+            'positive_precision': scores.p[0],
+            'negative_precision': scores.p[1],
+            'neutral_precision': scores.p[2],
+            'positive_recall': scores.r[0],
+            'negative_recall': scores.r[1],
+            'neutral_recall': scores.r[2]
+        })
 
 
 def main():
