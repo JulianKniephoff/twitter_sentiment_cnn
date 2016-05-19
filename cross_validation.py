@@ -81,6 +81,7 @@ def cross_validate(model, dataset, epochs, batch_size, output):
             'positive_recall', 'negative_recall', 'neutral_recall'
         ]
     )
+    output_writer.writeheader()
 
     cv = cross_validation.KFold(n, 10)
     for train, test in cv:
