@@ -90,7 +90,7 @@ def cross_validate(model, dataset, epochs, batch_size, output):
             labels[train], labels[test],
             batch_size, epochs
         )
-        output_writer.write_row({
+        output_writer.writerow({
             'positive_precision': scores.p[0],
             'negative_precision': scores.p[1],
             'neutral_precision': scores.p[2],
