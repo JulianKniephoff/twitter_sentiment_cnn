@@ -17,6 +17,6 @@ def rate(x):
 
 
 def parse_tweets(filename):
-    with open(filename) as file:
+    with open(filename, newline='') as file:
         for i, row in enumerate(csv.reader(file)):
             yield LabeledTweet(tweet=row[2:], label=int(row[0]))
