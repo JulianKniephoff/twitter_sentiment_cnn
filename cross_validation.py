@@ -1,44 +1,45 @@
-from util import parse_tweets
-
 from collections import namedtuple
-
 import csv
-
 import argparse
 from argparse import ArgumentParser
-from argtypes import positive_integer
 
 import numpy as np
-
 from sklearn import cross_validation
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-from cnn import CNN, LabeledTweet
+from .argtypes import positive_integer
+from .cnn import CNN, LabeledTweet
+from .util import parse_tweets
 
 
 def parse_args():
     parser = ArgumentParser('Evaluate a CNN')
 
     # TODO Validation
-    parser.add_argument('-m', '--model',
-                        required=True)
+    parser.add_argument('-m', '--model', required=True)
 
-    parser.add_argument('-d', '--dataset',
-                        required=True,
-                        type=argparse.FileType('r'))
+    parser.add_argument(
+        '-d', '--dataset', required=True,
+        type=argparse.FileType('r')
+    )
 
     # TODO It sucks that we have to specify an output file.
     #   We can't use stdout, though, since keras is cluttering that up.
-    parser.add_argument('-o', '--output',
-                        required=True,
-                        type=argparse.FileType('w'))
+    parser.add_argument(
+        '-o', '--output', required=True,
+        type=argparse.FileType('w')
+    )
 
-    parser.add_argument('-b', '--batch-size',
-                        default=50,
-                        type=positive_integer)
-    parser.add_argument('-e', '--epochs',
-                        default=1,
-                        type=positive_integer)
+    parser.add_argument(
+        '-b', '--batch-size',
+        default=50,
+        type=positive_integer
+    )
+    parser.add_argument(
+        '-e', '--epochs',
+        default=1,
+        type=positive_integer
+    )
 
     return parser.parse_args()
 
@@ -47,13 +48,24 @@ EvaluationResult = namedtuple('EvaluationResult', ['p', 'r'])
 
 
 # TODO Should we really assume that tweets is just a list?
-def evaluate(model, train_tweets, test_tweets, train_labels, test_labels, batch_size, epochs):
+def evaluate(
+        model,
+        train_tweets,
+        test_tweets,
+        train_labels,
+        test_labels,
+        batch_size,
+        epochs
+):
     cnn = CNN()
     cnn.load(model)
 
     cnn.fit_generator(
         # TODO Ugh, really? Maybe just use or wrap fit?
-        lambda: (LabeledTweet(label=label, tweet=tweet) for label, tweet in zip(train_labels, train_tweets)),
+        lambda: (
+            LabeledTweet(label=label, tweet=tweet)
+            for label, tweet in zip(train_labels, train_tweets)
+        ),
         batch_size=batch_size,
         nb_epoch=epochs,
         samples_per_epoch=len(train_tweets)
@@ -68,7 +80,8 @@ def evaluate(model, train_tweets, test_tweets, train_labels, test_labels, batch_
 
 
 def cross_validate(model, dataset, epochs, batch_size, output):
-    test_tweets = list(parse_tweets(dataset.name))  # TODO It sucks that this reopens the file
+    # TODO It sucks that this reopens the file
+    test_tweets = list(parse_tweets(dataset.name))
     n = len(test_tweets)
 
     texts = np.array([labeled_tweet.tweet for labeled_tweet in test_tweets])

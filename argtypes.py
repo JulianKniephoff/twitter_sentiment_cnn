@@ -1,10 +1,9 @@
-import util
-
+import yaml
 from argparse import ArgumentTypeError
 
-import yaml
-
 from gensim.models import Word2Vec
+
+from . import util
 
 
 def positive_integer(argument):
@@ -19,7 +18,9 @@ def rate(argument):
     try:
         rate = util.rate(argument)
     except ValueError:
-        raise ArgumentTypeError('Argument needs to be a number in the interval [0, 1]')
+        raise ArgumentTypeError(
+            'Argument needs to be a number in the interval [0, 1]'
+        )
     return rate
 
 
@@ -34,7 +35,10 @@ def filter_configuration(argument):
             try:
                 util.positive_integer(value)
             except ValueError:
-                raise ArgumentTypeError('%s needs to be a positive integer' % name)
+                # TODO Use `format`
+                raise ArgumentTypeError(
+                    '%s needs to be a positive integer' % name
+                )
     return configuration
 
 
@@ -43,4 +47,7 @@ def word2vec_model(argument):
         return Word2Vec.load(argument)
     # TODO Catch more specific exceptions
     except:
-        raise ArgumentTypeError('Could not read embeddings from %s' % argument)
+        # TODO Use `format`
+        raise ArgumentTypeError(
+            'Could not read embeddings from %s' % argument
+        )

@@ -1,20 +1,33 @@
-from util import parse_tweets
-
 import argparse
 from argparse import ArgumentParser
-from argtypes import positive_integer, rate, filter_configuration, word2vec_model
 
-from cnn import CNN
+from .argtypes import (
+    positive_integer,
+    rate,
+    filter_configuration,
+    word2vec_model
+)
+from .util import parse_tweets
+from .cnn import CNN
+
+
+# TODO Do these belong here even?
+DEFAULT_BATCH_SIZE = 50
+
+
+DEFAULT_EPOCHS = 1
 
 
 def parse_args():
     parser = ArgumentParser(description='Train a CNN')
     # TODO More validations for these parameters?
-    parser.add_argument('-t', '--dataset',
-                        type=argparse.FileType('r'),
-                        required=True)
+    parser.add_argument(
+        '-t', '--dataset', required=True,
+        type=argparse.FileType('r'),
+    )
 
-    # TODO Making a subcommand mandatory currently requires setting a `dest
+    # TODO Making a subcommand mandatory
+    #   currently requires setting a `dest`
     #   and setting the `required` property.
     #   I don't think this is intended behavior
     subparsers = parser.add_subparsers(dest='command')
@@ -23,42 +36,63 @@ def parse_args():
     load_subparser.add_argument('model')  # TODO Validation
 
     new_subparser = subparsers.add_parser('new')
-    new_subparser.add_argument('-e', '--embeddings',
-                               type=word2vec_model,
-                               required=True)
+    new_subparser.add_argument(
+        '-e', '--embeddings', required=True,
+        type=word2vec_model,
+    )
 
-    new_subparser.add_argument('-f', '--filters',
-                               type=filter_configuration,
-                               required=True)
+    new_subparser.add_argument(
+        '-f', '--filters', required=True,
+        type=filter_configuration,
+    )
 
-    new_subparser.add_argument('-v', '--vocabulary-size',
-                               type=positive_integer)
+    new_subparser.add_argument(
+        '-v', '--vocabulary-size',
+        type=positive_integer
+    )
 
-    new_subparser.add_argument('-d', '--dropout-rate',
-                               type=rate)
+    new_subparser.add_argument(
+        '-d', '--dropout-rate',
+        type=rate
+    )
 
     # TODO Validate this
-    new_subparser.add_argument('-a', '--activation',
-                               default='linear',
-                               help='default: %(default)s')
+    new_subparser.add_argument(
+        '-a', '--activation',
+        default='linear',
+        help='default: %(default)s'
+    )
 
-    parser.add_argument('-c', '--epochs',
-                        type=positive_integer,
-                        default=1,
-                        help='default: %(default)s')
-    parser.add_argument('-b', '--batch',
-                        type=positive_integer,
-                        default=50,
-                        help='default: %(default)s')
+    parser.add_argument(
+        '-c', '--epochs',
+        type=positive_integer,
+        default=DEFAULT_EPOCHS,
+        help='default: %(default)s'
+    )
+    parser.add_argument(
+        '-b', '--batch',
+        type=positive_integer,
+        default=DEFAULT_BATCH_SIZE,
+        help='default: %(default)s'
+    )
 
     # TODO We should ensure that this directory exists or create it
-    parser.add_argument('-o', '--output',
-                        required=True)
+    parser.add_argument('-o', '--output', required=True)
 
     return parser.parse_args()
 
 
-def train(dataset, embeddings, model, vocabulary_size, filters, dropout_rate, activation, epochs, batch_size):
+def train(
+        dataset,
+        embeddings,
+        vocabulary_size,
+        filters,
+        dropout_rate,
+        activation,
+        epochs,
+        batch_size,
+        model = None
+):
     tweet_count = sum(1 for tweet in parse_tweets(dataset))
 
     cnn = CNN()
@@ -67,6 +101,7 @@ def train(dataset, embeddings, model, vocabulary_size, filters, dropout_rate, ac
         cnn.load(model)
     else:
         print('building network')
+        # TODO This call looks very strange ...
         cnn.build_network(
             embeddings,
             filters,
@@ -94,13 +129,13 @@ def main():
         args.dataset.name,
         # TODO Wow, what a hack. O_o
         args.embeddings if args.command == 'new' else None,
-        args.model if args.command == 'load' else None,
         args.vocabulary_size if args.command == 'new' else None,
         args.filters if args.command == 'new' else None,
         args.dropout_rate if args.command == 'new' else None,
         args.activation if args.command == 'new' else None,
         args.epochs,
-        args.batch
+        args.batch,
+        args.model if args.command == 'load' else None
     )
     cnn.save(args.output)
 

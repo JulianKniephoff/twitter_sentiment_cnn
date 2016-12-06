@@ -1,13 +1,10 @@
 from collections import namedtuple
-
 from os import path, makedirs
-
 import json
 
 import numpy as np
 
 from theano.tensor.nnet import softmax
-
 from keras.models import Graph, model_from_yaml
 from keras.layers.core import Dense, Lambda, Dropout
 from keras.layers.embeddings import Embedding
@@ -37,14 +34,20 @@ class OneMaxPooling(Lambda):
     def __init__(self, count, **kwargs):
         # Count represents the output shape
         # TODO `count` is not really a good name
-        # NOTE This has to live in a different attribute, though, since `output_shape` is not properly deserialized
+        # NOTE This has to live in a different attribute, though,
+        #   since `output_shape` is not properly deserialized
         self.count = count
         # TODO Why do we have to specify the `output_shape` at all?
-        super(OneMaxPooling, self).__init__(function=one_max_pooling, output_shape=(self.count,), **kwargs)
+        super(OneMaxPooling, self).__init__(
+            function=one_max_pooling,
+            output_shape=(self.count,),
+            **kwargs
+        )
 
     def get_config(self):
         config = super(OneMaxPooling, self).get_config()
-        # Add `count` to the config so that it gets serialized alongside the rest of the configuration
+        # Add `count` to the config so that it gets serialized
+        # alongside the rest of the configuration
         config['count'] = self.count
         return config
 
@@ -69,7 +72,8 @@ class CNN:
                 [self.index[word] for word in tweet if word in self.index]
                 for tweet in tweets
             ],
-            maxlen=70,  # 70 is the maximum number of tokens in a 140 character string
+            # The maximum number of tokens in a 140 character string
+            maxlen=70,
             value=self.padding_index,
             padding='post'
         )
@@ -84,19 +88,23 @@ class CNN:
             'input': self.tweets_to_indices(
                 labeled_tweet.tweet for labeled_tweet in tweets
             ),
-            'output': np.array(
-                [output_for_class(labeled_tweet.label) for labeled_tweet in tweets]
-            )
+            # TODO Is the list needed here
+            #   or is a generator sufficient?
+            'output': np.array([
+                output_for_class(labeled_tweet.label)
+                for labeled_tweet in tweets
+            ])
         }
 
-    def build_network(self,
-                      initial_embeddings,
-                      filter_configuration,
-                      vocabulary_size=None,
-                      dropout_rate=None,
-                      activation='linear',
-                      classes=2):
-
+    def build_network(
+            self,
+            initial_embeddings,
+            filter_configuration,
+            vocabulary_size=None,
+            dropout_rate=None,
+            activation='linear',
+            classes=2
+    ):
         if not filter_configuration:
             raise ValueError('There needs to be at least one filter')
         if not initial_embeddings:
@@ -109,37 +117,49 @@ class CNN:
         )[:vocabulary_size]
 
         self.index = create_index(vocabulary)
-        # There is no need for an explicit padding symbol in the index or vocabulary
+        # There is no need for an explicit padding symbol
+        # in the index or vocabulary
         self.padding_index = len(vocabulary)
 
         self.network = Graph()
-        self.network.add_input(name='input', input_shape=(None,), dtype='int')  # TODO 'int' should not be a string
+        # TODO 'int' should not be a string
+        self.network.add_input(name='input', input_shape=(None,), dtype='int')
 
         initial_weights = [np.array(
             [initial_embeddings[word] for word in vocabulary] +
             [np.zeros(initial_embeddings.vector_size)]
         )]
 
-        self.embedding_layer = Embedding(input_dim=len(self.index) + 1,  # + 1 for padding
-                                         output_dim=initial_embeddings.vector_size,
-                                         weights=initial_weights)
-        self.network.add_node(name='embedding',
-                              layer=self.embedding_layer,
-                              input='input')
+        self.embedding_layer = Embedding(
+            input_dim=len(self.index) + 1,  # + 1 for padding
+            output_dim=initial_embeddings.vector_size,
+            weights=initial_weights
+        )
+        self.network.add_node(
+            name='embedding',
+            layer=self.embedding_layer,
+            input='input'
+        )
 
         filters = []
         for size in filter_configuration:
             # TODO Use sequential containers here?
-            # The question is then: Do we need to access them later on and how do we do that?
+            #   The question is then: Do we need to access them later on
+            #   and how do we do that?
             count = filter_configuration[size]
             convolution = Convolution1D(count, size, activation=activation)
-            self.network.add_node(name='convolution-%d' % size,
-                                  layer=convolution,
-                                  input='embedding')
+            # TODO Use format
+            self.network.add_node(
+                name='convolution-%d' % size,
+                layer=convolution,
+                input='embedding'
+            )
             pooling = OneMaxPooling(count=count)
-            self.network.add_node(name='max-pooling-%d' % size,
-                                  layer=pooling,
-                                  input='convolution-%d' % size)
+            self.network.add_node(
+                name='max-pooling-%d' % size,
+                layer=pooling,
+                input='convolution-%d' % size
+            )
             self.convolutions.append(convolution)
             self.pools.append(pooling)
             filters.append('max-pooling-%d' % size)
@@ -152,24 +172,33 @@ class CNN:
 
         if dropout_rate:
             self.dropout_layer = Dropout(p=dropout_rate)
-            self.network.add_node(name='dropout',
-                                  layer=self.dropout_layer,
-                                  **inputs)
+            self.network.add_node(
+                name='dropout',
+                layer=self.dropout_layer,
+                concat_axis=1,  # Work around a Theano bug
+                **inputs
+            )
             inputs = {'input': 'dropout'}
 
-        # TODO This should be `softmax` instead of `'softmax'` IMO, but I got an error in `save`:
-        # AttributeError: 'Softmax' object has no attribute '__name__'
+        # TODO This should be `softmax` instead of `'softmax'` IMO,
+        #   but I got an error in `save`:
+        #   > `AttributeError: 'Softmax' object has no attribute '__name__'`
         self.classes = classes
         self.dense_layer = Dense(self.classes, activation='softmax')
-        self.network.add_node(name='dense',
-                              layer=self.dense_layer,
-                              **inputs)
+        self.network.add_node(
+            name='dense',
+            layer=self.dense_layer,
+            concat_axis=1,  # Work around a Theano bug
+            **inputs
+        )
 
-        self.network.add_output(name='output',
-                                input='dense')
+        self.network.add_output(name='output', input='dense')
 
         # TODO Are these actually the parameters we want?
-        self.network.compile(optimizer=Adagrad(), loss={'output': categorical_crossentropy})
+        self.network.compile(
+            optimizer=Adagrad(),
+            loss={'output': categorical_crossentropy}
+        )
 
     def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
         # TODO This should not be a closure ...
@@ -182,7 +211,8 @@ class CNN:
         generator = infinite_generator()
 
         def tweet_generator():
-            while True:  # TODO This seems redundant. Can we compose generators somehow?
+            # TODO This seems redundant. Can we compose generators somehow?
+            while True:
                 yield self.prepare_labeled_tweets(
                     [next(generator) for _ in range(batch_size)]
                 )
@@ -203,15 +233,21 @@ class CNN:
 
         with open(path.join(basedir, 'model.yml'), 'w') as model_file:
             model_file.write(self.network.to_yaml())
-        # NOTE Maybe use `overwrite=True`
-        self.network.save_weights(path.join(basedir, 'weights.h5'), overwrite=True)
+        self.network.save_weights(
+            path.join(basedir, 'weights.h5'),
+            overwrite=True
+        )
         with open(path.join(basedir, 'index.json'), 'w') as index_file:
             json.dump(self.index, index_file)
 
     def load(self, basedir):
-        # TODO What if the index does not match the vocabulary in the model files?
+        # TODO What if the index does not match the vocabulary
+        #   in the model files?
         with open(path.join(basedir, 'model.yml'), 'r') as model_file:
-            self.network = model_from_yaml(model_file.read(), custom_objects={'OneMaxPooling': OneMaxPooling})
+            self.network = model_from_yaml(
+                model_file.read(),
+                custom_objects={'OneMaxPooling': OneMaxPooling}
+            )
         self.network.load_weights(path.join(basedir, 'weights.h5'))
         with open(path.join(basedir, 'index.json'), 'r') as index_file:
             self.index = json.load(index_file)

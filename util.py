@@ -1,18 +1,22 @@
 import csv
 
-from cnn import LabeledTweet
+from .cnn import LabeledTweet
 
 
 def positive_integer(x):
     integer = int(x)
     if integer <= 0:
-        raise ValueError('%s is not a positive integer' % repr(x))
+        # TODO Is `repr` the right thing here? Do you even need it?
+        # TODO Use `format`
+        raise ValueError('{} is not a positive integer'.format(x))
     return integer
 
 def rate(x):
     rate = float(x)
     if rate < 0 or rate > 1:
-        raise ValueError('%s is not a rate' % repr(x))
+        # TODO Is `repr` the right thing here? Do you even need it?
+        # TODO Use `format`
+        raise ValueError('{} is not a rate'.format(x))
     return rate
 
 
