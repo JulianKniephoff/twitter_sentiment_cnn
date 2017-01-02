@@ -106,6 +106,8 @@ class CNN:
         )[:vocabulary_size]
 
         cnn.__index = _create_index(vocabulary)
+        # NOTE This is not actually a valid index into the vocabulary.
+        #   We don't actually need an explicit padding symbol anywhere.
         cnn.__padding_index = len(vocabulary)
 
         cnn.__network = Graph()
