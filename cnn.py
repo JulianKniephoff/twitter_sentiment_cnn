@@ -88,18 +88,18 @@ class CNN:
 
     def build_network(
             self,
-            initial_embeddings,
+            embeddings,
             vocabulary_size,
-            filter_configuration,
-            dropout_rate,
+            filters,
+            dropout,
             activation,
             # TODO Get rid of this default parameter
             classes=2
     ):
 
         vocabulary = sorted(
-            initial_embeddings.vocab,
-            key=lambda word: initial_embeddings.vocab[word].count,
+            embeddings.vocab,
+            key=lambda word: embeddings.vocab[word].count,
             reverse=True
         )[:vocabulary_size]
 
@@ -113,13 +113,13 @@ class CNN:
         self.__network.add_input(name='input', input_shape=(None,), dtype='int')
 
         initial_weights = [np.array(
-            [initial_embeddings[word] for word in vocabulary] +
-            [np.zeros(initial_embeddings.vector_size)]
+            [embeddings[word] for word in vocabulary] +
+            [np.zeros(embeddings.vector_size)]
         )]
 
         embedding_layer = Embedding(
             input_dim=len(self.__index) + 1,  # + 1 for padding
-            output_dim=initial_embeddings.vector_size,
+            output_dim=embeddings.vector_size,
             weights=initial_weights
         )
         self.__network.add_node(
@@ -128,12 +128,12 @@ class CNN:
             input='input'
         )
 
-        filters = []
-        for size in filter_configuration:
+        filter_outputs = []
+        for size in filters:
             # TODO Use sequential containers here?
             #   The question is then: Do we need to access them later on
             #   and how do we do that?
-            count = filter_configuration[size]
+            count = filters[size]
             convolution = Convolution1D(count, size, activation=activation)
             # TODO Use format
             self.__network.add_node(
@@ -147,16 +147,16 @@ class CNN:
                 layer=pooling,
                 input='convolution-%d' % size
             )
-            filters.append('max-pooling-%d' % size)
+            filter_outputs.append('max-pooling-%d' % size)
 
         # TODO Use sequential containers here, too
-        if len(filters) is 1:
-            inputs = {'input': filters[0]}
+        if len(filter_outputs) is 1:
+            inputs = {'input': filter_outputs[0]}
         else:
-            inputs = {'inputs': filters}
+            inputs = {'inputs': filter_outputs}
 
-        if dropout_rate:
-            dropout_layer = Dropout(p=dropout_rate)
+        if dropout:
+            dropout_layer = Dropout(p=dropout)
             self.__network.add_node(
                 name='dropout',
                 layer=dropout_layer,
