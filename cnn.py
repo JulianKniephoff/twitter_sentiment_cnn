@@ -132,9 +132,6 @@ class CNN:
 
         filter_outputs = []
         for size in filters:
-            # TODO Use sequential containers here?
-            #   The question is then: Do we need to access them later on
-            #   and how do we do that?
             count = filters[size]
             convolution = Convolution1D(count, size, activation=activation)
             # TODO Use format
@@ -151,7 +148,6 @@ class CNN:
             )
             filter_outputs.append('max-pooling-%d' % size)
 
-        # TODO Use sequential containers here, too
         if len(filter_outputs) is 1:
             inputs = {'input': filter_outputs[0]}
         else:
