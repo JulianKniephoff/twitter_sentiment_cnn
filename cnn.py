@@ -14,12 +14,12 @@ from keras.objectives import categorical_crossentropy
 from keras.preprocessing.sequence import pad_sequences
 
 
-def create_index(vocabulary):
+def _create_index(vocabulary):
     return {word: i for (i, word) in enumerate(vocabulary)}
 
 
 # TODO Does this live in the right scope?
-def one_max_pooling(x):
+def _one_max_pooling(x):
     # TODO This import business is wonky
     from theano.tensor import max
     return max(x, 1)
@@ -27,7 +27,7 @@ def one_max_pooling(x):
 
 # Wrap a `Lambda` layer with a specific function
 # NOTE This is necessary to deserialize this layer
-class OneMaxPooling(Lambda):
+class _OneMaxPooling(Lambda):
     def __init__(self, count, **kwargs):
         # Count represents the output shape
         # TODO `count` is not really a good name
@@ -35,14 +35,14 @@ class OneMaxPooling(Lambda):
         #   since `output_shape` is not properly deserialized
         self.count = count
         # TODO Why do we have to specify the `output_shape` at all?
-        super(OneMaxPooling, self).__init__(
-            function=one_max_pooling,
+        super(_OneMaxPooling, self).__init__(
+            function=_one_max_pooling,
             output_shape=(self.count,),
             **kwargs
         )
 
     def get_config(self):
-        config = super(OneMaxPooling, self).get_config()
+        config = super(_OneMaxPooling, self).get_config()
         # Add `count` to the config so that it gets serialized
         # alongside the rest of the configuration
         config['count'] = self.count
@@ -61,28 +61,26 @@ class CNN:
         self.padding_index = None
         self.classes = None
 
-    # TODO Do the following two methods need to be public?
-
-    def tweets_to_indices(self, tweets):
+    def __tweets_to_indices(self, tweets):
         return pad_sequences(
             [
-                [self.index[word] for word in tweet if word in self.index]
+                [self.__index[word] for word in tweet.tokens if word in self.__index]
                 for tweet in tweets
             ],
             # The maximum number of tokens in a 140 character string
             maxlen=70,
-            value=self.padding_index,
+            value=self.__padding_index,
             padding='post'
         )
 
-    def prepare_labeled_tweets(self, tweets):
+    def __prepare_labeled_tweets(self, tweets):
         def output_for_class(class_number):
-            output = [0] * self.classes
+            output = [0] * self.__classes
             output[class_number] = 1
             return output
 
         return {
-            'input': self.tweets_to_indices(
+            'input': self.__tweets_to_indices(
                 labeled_tweet.tweet for labeled_tweet in tweets
             ),
             # TODO Is the list needed here
@@ -113,14 +111,14 @@ class CNN:
             reverse=True
         )[:vocabulary_size]
 
-        self.index = create_index(vocabulary)
+        self.__index = _create_index(vocabulary)
         # There is no need for an explicit padding symbol
         # in the index or vocabulary
-        self.padding_index = len(vocabulary)
+        self.__padding_index = len(vocabulary)
 
-        self.network = Graph()
+        self.__network = Graph()
         # TODO 'int' should not be a string
-        self.network.add_input(name='input', input_shape=(None,), dtype='int')
+        self.__network.add_input(name='input', input_shape=(None,), dtype='int')
 
         initial_weights = [np.array(
             [initial_embeddings[word] for word in vocabulary] +
@@ -128,11 +126,11 @@ class CNN:
         )]
 
         self.embedding_layer = Embedding(
-            input_dim=len(self.index) + 1,  # + 1 for padding
+            input_dim=len(self.__index) + 1,  # + 1 for padding
             output_dim=initial_embeddings.vector_size,
             weights=initial_weights
         )
-        self.network.add_node(
+        self.__network.add_node(
             name='embedding',
             layer=self.embedding_layer,
             input='input'
@@ -146,13 +144,13 @@ class CNN:
             count = filter_configuration[size]
             convolution = Convolution1D(count, size, activation=activation)
             # TODO Use format
-            self.network.add_node(
+            self.__network.add_node(
                 name='convolution-%d' % size,
                 layer=convolution,
                 input='embedding'
             )
-            pooling = OneMaxPooling(count=count)
-            self.network.add_node(
+            pooling = _OneMaxPooling(count=count)
+            self.__network.add_node(
                 name='max-pooling-%d' % size,
                 layer=pooling,
                 input='convolution-%d' % size
@@ -169,7 +167,7 @@ class CNN:
 
         if dropout_rate:
             self.dropout_layer = Dropout(p=dropout_rate)
-            self.network.add_node(
+            self.__network.add_node(
                 name='dropout',
                 layer=self.dropout_layer,
                 concat_axis=1,  # Work around a Theano bug
@@ -180,22 +178,48 @@ class CNN:
         # TODO This should be `softmax` instead of `'softmax'` IMO,
         #   but I got an error in `save`:
         #   > `AttributeError: 'Softmax' object has no attribute '__name__'`
-        self.classes = classes
-        self.dense_layer = Dense(self.classes, activation='softmax')
-        self.network.add_node(
+        self.__classes = classes
+        dense_layer = Dense(self.__classes, activation='softmax')
+        self.__network.add_node(
             name='dense',
             layer=self.dense_layer,
             concat_axis=1,  # Work around a Theano bug
             **inputs
         )
 
-        self.network.add_output(name='output', input='dense')
+        self.__network.add_output(name='output', input='dense')
 
         # TODO Are these actually the parameters we want?
-        self.network.compile(
+        self.__network.compile(
             optimizer=Adagrad(),
             loss={'output': categorical_crossentropy}
         )
+
+    def save(self, basedir):
+        makedirs(basedir, exist_ok=True)
+
+        with open(path.join(basedir, 'model.yml'), 'w') as model_file:
+            model_file.write(self.__network.to_yaml())
+        self.__network.save_weights(
+            path.join(basedir, 'weights.h5'),
+            overwrite=True
+        )
+        with open(path.join(basedir, 'index.json'), 'w') as index_file:
+            json.dump(self.__index, index_file)
+
+    def load(self, basedir):
+        with open(path.join(basedir, 'model.yml'), 'r') as model_file:
+            self.__network = model_from_yaml(
+                model_file.read(),
+                custom_objects={'_OneMaxPooling': _OneMaxPooling}
+            )
+
+        self.__network.load_weights(path.join(basedir, 'weights.h5'))
+
+        with open(path.join(basedir, 'index.json'), 'r') as index_file:
+            self.__index = json.load(index_file)
+            self.__padding_index = len(cnn.__index)
+            self.__classes = cnn.__network.outputs['output'].output_dim
 
     def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
         # TODO This should not be a closure ...
@@ -210,44 +234,17 @@ class CNN:
         def tweet_generator():
             # TODO This seems redundant. Can we compose generators somehow?
             while True:
-                yield self.prepare_labeled_tweets(
+                yield self.__prepare_labeled_tweets(
                     [next(generator) for _ in range(batch_size)]
                 )
 
-        self.network.fit_generator(
+        self.__network.fit_generator(
             tweet_generator(),
             *args, **kwargs
         )
 
     def predict(self, tweets, *args, **kwargs):
-        return self.network.predict(
-            {'input': self.tweets_to_indices(tweets)},
+        return self.__network.predict(
+            {'input': self.__tweets_to_indices(tweets)},
             *args, **kwargs
-        )
-
-    def save(self, basedir):
-        makedirs(basedir, exist_ok=True)
-
-        with open(path.join(basedir, 'model.yml'), 'w') as model_file:
-            model_file.write(self.network.to_yaml())
-        self.network.save_weights(
-            path.join(basedir, 'weights.h5'),
-            overwrite=True
-        )
-        with open(path.join(basedir, 'index.json'), 'w') as index_file:
-            json.dump(self.index, index_file)
-
-    def load(self, basedir):
-        # TODO What if the index does not match the vocabulary
-        #   in the model files?
-        with open(path.join(basedir, 'model.yml'), 'r') as model_file:
-            self.network = model_from_yaml(
-                model_file.read(),
-                custom_objects={'OneMaxPooling': OneMaxPooling}
-            )
-        self.network.load_weights(path.join(basedir, 'weights.h5'))
-        with open(path.join(basedir, 'index.json'), 'r') as index_file:
-            self.index = json.load(index_file)
-            self.padding_index = len(self.index)
-            self.classes = self.network.outputs['output'].output_dim
-
+        )['output']
