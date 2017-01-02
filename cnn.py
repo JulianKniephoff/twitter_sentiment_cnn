@@ -50,17 +50,6 @@ class _OneMaxPooling(Lambda):
 
 
 class CNN:
-    def __init__(self):
-        self.index = None
-        self.network = None
-        self.embedding_layer = None
-        self.convolutions = []
-        self.pools = []
-        self.dense_layer = None
-        self.dropout_layer = None
-        self.padding_index = None
-        self.classes = None
-
     def __tweets_to_indices(self, tweets):
         return pad_sequences(
             [
@@ -91,13 +80,17 @@ class CNN:
             ])
         }
 
+    def classes(self):
+        return self.__classes
+
     def build_network(
             self,
             initial_embeddings,
+            vocabulary_size,
             filter_configuration,
-            vocabulary_size=None,
-            dropout_rate=None,
-            activation='linear',
+            dropout_rate,
+            activation,
+            # TODO Get rid of this default parameter
             classes=2
     ):
         if not filter_configuration:
@@ -125,14 +118,14 @@ class CNN:
             [np.zeros(initial_embeddings.vector_size)]
         )]
 
-        self.embedding_layer = Embedding(
+        embedding_layer = Embedding(
             input_dim=len(self.__index) + 1,  # + 1 for padding
             output_dim=initial_embeddings.vector_size,
             weights=initial_weights
         )
         self.__network.add_node(
             name='embedding',
-            layer=self.embedding_layer,
+            layer=embedding_layer,
             input='input'
         )
 
@@ -155,8 +148,6 @@ class CNN:
                 layer=pooling,
                 input='convolution-%d' % size
             )
-            self.convolutions.append(convolution)
-            self.pools.append(pooling)
             filters.append('max-pooling-%d' % size)
 
         # TODO Use sequential containers here, too
@@ -166,10 +157,10 @@ class CNN:
             inputs = {'inputs': filters}
 
         if dropout_rate:
-            self.dropout_layer = Dropout(p=dropout_rate)
+            dropout_layer = Dropout(p=dropout_rate)
             self.__network.add_node(
                 name='dropout',
-                layer=self.dropout_layer,
+                layer=dropout_layer,
                 concat_axis=1,  # Work around a Theano bug
                 **inputs
             )
@@ -182,7 +173,7 @@ class CNN:
         dense_layer = Dense(self.__classes, activation='softmax')
         self.__network.add_node(
             name='dense',
-            layer=self.dense_layer,
+            layer=dense_layer,
             concat_axis=1,  # Work around a Theano bug
             **inputs
         )
