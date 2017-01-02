@@ -14,9 +14,6 @@ from keras.objectives import categorical_crossentropy
 from keras.preprocessing.sequence import pad_sequences
 
 
-LabeledTweet = namedtuple('LabeledTweet', ['tweet', 'label'])
-
-
 def create_index(vocabulary):
     return {word: i for (i, word) in enumerate(vocabulary)}
 

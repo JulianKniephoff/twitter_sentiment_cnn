@@ -1,7 +1,5 @@
 import csv
 
-from .cnn import LabeledTweet
-
 
 def positive_integer(x):
     integer = int(x)
@@ -18,9 +16,3 @@ def rate(x):
         # TODO Use `format`
         raise ValueError('{} is not a rate'.format(x))
     return rate
-
-
-def parse_tweets(filename):
-    with open(filename, newline='') as file:
-        for i, row in enumerate(csv.reader(file)):
-            yield LabeledTweet(tweet=row[2:], label=int(row[0]))
