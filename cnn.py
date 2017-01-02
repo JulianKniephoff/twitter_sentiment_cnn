@@ -219,6 +219,12 @@ class CNN:
 
         return cnn
 
+    def fit(self, labeled_tweets, *args, **kwargs):
+        tweets = self.__prepare_labeled_tweets(labeled_tweets)
+        return self.__network.fit(tweets, *args, **kwargs)
+
+    # TODO Rename this
+    #   (or maybe even get rid of it ...)
     def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
         # TODO This should not be a closure ...
         #   Maybe this should not even be here ...
