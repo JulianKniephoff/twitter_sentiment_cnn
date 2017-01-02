@@ -68,6 +68,9 @@ class CNN:
             output[class_number] = 1
             return output
 
+        # In case we are getting an iterator, we collect it here
+        # since we iterate over it twice
+        tweets = list(tweets)
         return {
             'input': self.__tweets_to_indices(
                 labeled_tweet.tweet for labeled_tweet in tweets
