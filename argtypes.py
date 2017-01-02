@@ -44,7 +44,6 @@ def filter_configuration(argument):
 def word2vec_model(argument):
     try:
         return Word2Vec.load(argument)
-    # TODO Catch more specific exceptions
     except:
         raise ArgumentTypeError(
             'Could not read embeddings from {}'.format(argument)
