@@ -86,8 +86,9 @@ class CNN:
     def classes(self):
         return self.__classes
 
-    def build_network(
-            self,
+    @classmethod
+    def build(
+            cls,
             embeddings,
             vocabulary_size,
             filters,
@@ -96,6 +97,7 @@ class CNN:
             # TODO Get rid of this default parameter
             classes=2
     ):
+        cnn = cls()
 
         vocabulary = sorted(
             embeddings.vocab,
@@ -103,14 +105,12 @@ class CNN:
             reverse=True
         )[:vocabulary_size]
 
-        self.__index = _create_index(vocabulary)
-        # There is no need for an explicit padding symbol
-        # in the index or vocabulary
-        self.__padding_index = len(vocabulary)
+        cnn.__index = _create_index(vocabulary)
+        cnn.__padding_index = len(vocabulary)
 
-        self.__network = Graph()
+        cnn.__network = Graph()
         # TODO 'int' should not be a string
-        self.__network.add_input(name='input', input_shape=(None,), dtype='int')
+        cnn.__network.add_input(name='input', input_shape=(None,), dtype='int')
 
         initial_weights = [np.array(
             [embeddings[word] for word in vocabulary] +
@@ -118,11 +118,11 @@ class CNN:
         )]
 
         embedding_layer = Embedding(
-            input_dim=len(self.__index) + 1,  # + 1 for padding
+            input_dim=len(cnn.__index) + 1,  # + 1 for padding
             output_dim=embeddings.vector_size,
             weights=initial_weights
         )
-        self.__network.add_node(
+        cnn.__network.add_node(
             name='embedding',
             layer=embedding_layer,
             input='input'
@@ -136,13 +136,13 @@ class CNN:
             count = filters[size]
             convolution = Convolution1D(count, size, activation=activation)
             # TODO Use format
-            self.__network.add_node(
+            cnn.__network.add_node(
                 name='convolution-%d' % size,
                 layer=convolution,
                 input='embedding'
             )
             pooling = _OneMaxPooling(count=count)
-            self.__network.add_node(
+            cnn.__network.add_node(
                 name='max-pooling-%d' % size,
                 layer=pooling,
                 input='convolution-%d' % size
@@ -157,7 +157,7 @@ class CNN:
 
         if dropout:
             dropout_layer = Dropout(p=dropout)
-            self.__network.add_node(
+            cnn.__network.add_node(
                 name='dropout',
                 layer=dropout_layer,
                 concat_axis=1,  # Work around a Theano bug
@@ -168,22 +168,25 @@ class CNN:
         # TODO This should be `softmax` instead of `'softmax'` IMO,
         #   but I got an error in `save`:
         #   > `AttributeError: 'Softmax' object has no attribute '__name__'`
-        self.__classes = classes
-        dense_layer = Dense(self.__classes, activation='softmax')
-        self.__network.add_node(
+        cnn.__classes = classes
+        dense_layer = Dense(cnn.__classes, activation='softmax')
+        cnn.__network.add_node(
             name='dense',
             layer=dense_layer,
             concat_axis=1,  # Work around a Theano bug
             **inputs
         )
 
-        self.__network.add_output(name='output', input='dense')
+        cnn.__network.add_output(name='output', input='dense')
 
         # TODO Are these actually the parameters we want?
-        self.__network.compile(
+        cnn.__network.compile(
             optimizer=Adagrad(),
             loss={'output': categorical_crossentropy}
         )
+
+        return cnn
+
 
     def save(self, basedir):
         makedirs(basedir, exist_ok=True)
@@ -197,19 +200,23 @@ class CNN:
         with open(path.join(basedir, 'index.json'), 'w') as index_file:
             json.dump(self.__index, index_file)
 
-    def load(self, basedir):
+    @classmethod
+    def load(cls, basedir):
+        cnn = cls()
         with open(path.join(basedir, 'model.yml'), 'r') as model_file:
-            self.__network = model_from_yaml(
+            cnn.__network = model_from_yaml(
                 model_file.read(),
                 custom_objects={'_OneMaxPooling': _OneMaxPooling}
             )
 
-        self.__network.load_weights(path.join(basedir, 'weights.h5'))
+        cnn.__network.load_weights(path.join(basedir, 'weights.h5'))
 
         with open(path.join(basedir, 'index.json'), 'r') as index_file:
-            self.__index = json.load(index_file)
-            self.__padding_index = len(cnn.__index)
-            self.__classes = cnn.__network.outputs['output'].output_dim
+            cnn.__index = json.load(index_file)
+            cnn.__padding_index = len(cnn.__index)
+            cnn.__classes = cnn.__network.outputs['output'].output_dim
+
+        return cnn
 
     def fit_generator(self, generator_generator, batch_size, *args, **kwargs):
         # TODO This should not be a closure ...
