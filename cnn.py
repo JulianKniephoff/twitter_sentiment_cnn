@@ -158,6 +158,7 @@ class CNN:
             cnn.__network.add_node(
                 name='dropout',
                 layer=dropout_layer,
+                # TODO Find a reference for said bug
                 concat_axis=1,  # Work around a Theano bug
                 **inputs
             )
@@ -171,6 +172,8 @@ class CNN:
         cnn.__network.add_node(
             name='dense',
             layer=dense_layer,
+            # TODO See above
+            # TODO Should this maybe be part of `inputs`?
             concat_axis=1,  # Work around a Theano bug
             **inputs
         )
