@@ -35,9 +35,8 @@ def filter_configuration(argument):
             try:
                 util.positive_integer(value)
             except ValueError:
-                # TODO Use `format`
                 raise ArgumentTypeError(
-                    '%s needs to be a positive integer' % name
+                    '{} needs to be a positive integer'.format(name)
                 )
     return configuration
 
@@ -47,7 +46,6 @@ def word2vec_model(argument):
         return Word2Vec.load(argument)
     # TODO Catch more specific exceptions
     except:
-        # TODO Use `format`
         raise ArgumentTypeError(
-            'Could not read embeddings from %s' % argument
+            'Could not read embeddings from {}'.format(argument)
         )
