@@ -96,10 +96,6 @@ class CNN:
             # TODO Get rid of this default parameter
             classes=2
     ):
-        if not filter_configuration:
-            raise ValueError('There needs to be at least one filter')
-        if not initial_embeddings:
-            raise ValueError ("We need pretrained word embeddings")
 
         vocabulary = sorted(
             initial_embeddings.vocab,
