@@ -136,17 +136,17 @@ class CNN:
             convolution = Convolution1D(count, size, activation=activation)
             # TODO Use format
             cnn.__network.add_node(
-                name='convolution-%d' % size,
+                name='convolution-{}'.format(size),
                 layer=convolution,
                 input='embedding'
             )
             pooling = _OneMaxPooling(count=count)
             cnn.__network.add_node(
-                name='max-pooling-%d' % size,
+                name='max-pooling-{}'.format(size),
                 layer=pooling,
-                input='convolution-%d' % size
+                input='convolution-{}'.format(size)
             )
-            filter_outputs.append('max-pooling-%d' % size)
+            filter_outputs.append('max-pooling-{}'.format(size))
 
         if len(filter_outputs) is 1:
             inputs = {'input': filter_outputs[0]}
